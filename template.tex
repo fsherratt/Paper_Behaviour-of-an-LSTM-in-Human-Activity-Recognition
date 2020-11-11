@@ -99,12 +99,10 @@ $^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
 %\conference{} % An extended version of a conference paper
 
 % Abstract (Do not insert blank lines, i.e. \\) 
-\abstract{ }
-% \abstract{A single paragraph of about 200 words maximum. For research articles, abstracts should give a pertinent overview of the work. We strongly encourage authors to use the following style of structured abstracts, but without headings: (1) Background: Place the question addressed in a broad context and highlight the purpose of the study; (2) Methods: Describe briefly the main methods or treatments applied; (3) Results: Summarize the article's main findings; and (4) Conclusion: Indicate the main conclusions or interpretations. The abstract should be an objective representation of the article, it must not contain results which are not presented and substantiated in the main text and should not exaggerate the main conclusions.}
+\abstract{A single paragraph of about 200 words maximum. For research articles, abstracts should give a pertinent overview of the work. We strongly encourage authors to use the following style of structured abstracts, but without headings: (1) Background: Place the question addressed in a broad context and highlight the purpose of the study; (2) Methods: Describe briefly the main methods or treatments applied; (3) Results: Summarize the article's main findings; and (4) Conclusion: Indicate the main conclusions or interpretations. The abstract should be an objective representation of the article, it must not contain results which are not presented and substantiated in the main text and should not exaggerate the main conclusions.}
 
 % Keywords
-\keyword{ }
-% \keyword{keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific to the article, yet reasonably common within the subject discipline.)}
+\keyword{keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific to the article, yet reasonably common within the subject discipline.)}
 
 % The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
 %\PACS{J0101}
@@ -138,42 +136,100 @@ $^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 %purpose/uses of HAR
-Human Activity Recognition systems have numerous health applications, such as monitoring of physical activity level to manage health conditions or automatic gait mode selection of lower limb prosthesis. Classification accuracy is the key factor in determining the performance of these systems, along with generalization i.e. their flexibility of the classifier to support new users.\cite{Ponce2016}
+Human Activity Recognition (HAR) systems have numerous health applications, such as automatic gait mode selection of lower limb prosthesis. Powered prosthetic have the potential to restore the large power generating muscles lost\cite{Ingraham2018} however to provide meaningful benefit the prosthesis must deliver the power at the correct time. It must therefore be able to identify the current locomotive task\cite{Grimes1983}. Based on this understanding the prosthesis can be set to the corresponding locomotive control mode\cite{Tucker2015, Windrich2016, Zhang2015}. In order for amputees to have confidence in the device the classification must be timely, accurate and consistent\cite{Pedroli2019, Sinha2011}. The classifier will need to be able to account for individual gait characteristics i.e. generalise to individuals\cite{Ponce2016}.
+
+% What is common in HAR (Which bit are we looking at?)
+The most common activities are Walking, Stair Ascent, Stair Descent, Ramp Ascent, Ramp Descent and Stopped
 
 %Background - % What activities, sensors, Feature selection, performance has been achieved
 Non-invasive wearable sensors, such as Inertial Measurement Units, are an appealing choice for developing such a system. 
+
 % Something about heuristics
 The current state of the art activity recognition papers using IMUs uses Long Short Term Network LSTM base Machine Learning ML techniques to achieve high levels of classification. These have been shown to achieve 95\%\cite{Murad2017} accuracy.
 
 % Problems\Research gaps
 Dehghani et al investigate the metrics used to evaluate the performance of classifiers in regard to there performance to previously unseen data presented using k-fold cross-validation methods\cite{Dehghani2019}. The papers found implement various forms of k-fold validation but none using LSTM use a subject based cross-validation. Instead, they either leave out individual windows \cite{Murad2017, Wang2020}<TK> or, when multiple data sets are recorded for participants, individual recordings \cite{Ordonez2016}<TK>. Dehghani found that this overestimates performance by 10-16\%. Studies that have left individuals out found accuracies closer of 86.7\% \cite{Zhao2018}. The reason for the poor generalisation when presented with a novel user has not been investigated.
 
-In this paper, we train simplified LSTM networks to classify simplified HAR problems. These models are then analysed in detail to understand their operation. The learning from this is then applied to more complicated networks to demonstrate this learning can be applied more generally. The major contributions of this work are as follows:
+In this paper, we train simplified LSTM networks to classify simplified HAR problems. These models are then analysed in detail to understand their operation. The understanding from this is then compared with the performance of a complex networks to demonstrate this learning can be applied more generally. The major contributions of this work are as follows:
 \begin{enumerate}
 \item Lorem ipsum dolor sit amet
 \item Consectetur adipiscing elit
 \end{enumerate}
+% What insight have we gained - why does novel data perform poorly, Why do errors occur, Where do errors occur
 
 The remainder of this paper is organized as follows;
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Related Works}
 % Related works - What have people tried so far in terms of generalisation
 
-
-\section{Background}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theory}
 %LSTM theory of operation
-\subsection{LSTM Operation}
-The Long Short Term network was created as a solution to the vanishing/exploding gradient problem found in Stock Recursive Neural Networks (RNN). The LSTM allows training gradients to flow for long duration's preventing them tending to extreme values. The LSTM cell contains a system of parameters and gaiting that controls the flow of information that allow it to be retained or forgotten. Like a standard RNN information may only move forward in time through an LSTM cell but can mix in other dimensions freely, i.e. the LSTM network cell inputs/outputs are fully connected between time steps.
+\subsection{LSTM Operation} % This needs to be a detailed description of LSTM operation highlighting the features important to the analysis conducted later
+% What are RNN
+The RNN architecture allows for the processing of sequential data. The RNN contains horizontal connections not just forward connections (from input towards output). See Figure \ref{fig:rnn_structure}.
+
+\begin{figure}[!hbt]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Figures/rnn_structure.png}
+    \caption{Unfolded Recurrent Network\cite{Graves2012}}
+    \label{fig:rnn_structure}
+\end{figure}
+
+ "activation arrive at the hidden layer from both the current external input and the hidden layer activation from the previous timestep"\cite{Graves2012} as illustrated in Equation \ref{eqn:rnn_activation}.
+\begin{equation}
+    a_h^t = \sum_{i=1}^I w_{ih}x^t_i + \sum_{h^\prime=1}^H w_{h^\prime h} b_{h^\prime}^{t-1}
+    \label{eqn:rnn_activation}
+\end{equation}
+
+%What problems exist with them 
+RNNs suffer from a phenomenon referred to as the vanishing gradient problem. During gradient based training methods repeated multiplication  by values that are not near 1 along long decency chains result in either vanish or explode. A vanishing gradients makes it difficult to know which direction the parameters should move to improve the cost function, while exploding gradients can make learning unstable. Non-gradient based training have been tried although to limited success. \cite{Graves2012, Goodfellow2015}
+
+The LSTM architecture solve these problems allows information to be retained for long periods of time mitigating the vanishing gradient problem. Originally created by Hochreiter and Schmidhuber in 1997\cite{Hochreiter1997} see Figure \ref{fig:lstm_unit}. The architecture allows information to be retained and forgotten over long periods of time based on context. Information flows along the cell state regulated by the forget and input gate structures. The final output of the unit is a filtered version of the cell state, the filtering is done based on context from the hidden state.\cite{Olah2015}   % Tensorflow implements the basic cell described by Hochreiter
+% Peephole connections \cite{Gers2000}
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/LSTM-chain.png}
+    \caption{Diagram of LSTM unit \cite{Olah2015}}
+    \label{fig:lstm_unit}
+\end{figure}
+
+Like a standard RNN information may only move forward in time through an LSTM cell but can mix in other dimensions freely, i.e. the LSTM network cell inputs/outputs are fully connected between time steps. This gives the model significantly more learning ability but makes understanding its operation challenging.
+
 
 %MARG HAR Data
-\subsection{Gait Cycle}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology}
 The following section describes the methodology used to investigate the proposed research question.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Definitions}
+The following axis system will be used when presenting and analysing the results. The axes uses a right hand convention, $x$ is forward towards the front of the foot, $y$ toward the left of the body and $z$ upwards. Figure \ref{fig:data_axis} illustrates this.
 
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.4\textwidth]{example-image-a}
+    \caption{Data axis}
+    \label{fig:data_axis}
+\end{figure}
+
+For ease of analysis in this article the start of the gait cycle is defined as the peak swing velocity as measured in the gyroscope y axis. Gait cycle percentage is given as proportion of the time period of the each cycle.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Data Collection}
-% Existing data sets?
+Which data sets already exist? 
+% UCI-HAD
+% Oppotunuty
+% Daphnet
+% Skoda
+% ...
+
+Why did we collect our own data set? What's better about it?
+% More natural and varied environment
+% Defined transitions - kind of
+% Location of the sensor - ankle
+% Multiple IMUs in a natural enviroment
+
+
 A wearable IMU produced by Movesense was used to collect activity data. This sensor contains a 9 axis MARG (Magnetic, Angular Rate and Gravity) in and a Bluetooth radio powered by a coin cell battery. The sensor housing contains a snap connectors allowing it to be clipped into attachment hardware and a variety of mounting hardware is available off the shelf. The sensor is user-programmable allowing customised behaviour. For this study, the sensor was programmed to form a Bluetooth Low Energy (BLE) connection and broadcast 100Hz MARG sensors data. % Explain sensor selection
 
 5 sensors were attached to each participant, an the inside of ankle using an elastic Velcro strap, each hip using a clothes/belt clip and the chest using a heart rate strap. These provided secure non-invasive attachment to minimise discomfort and disruption of natural movement. The data from each sensor was live-streamed recorded at 100Hz to a custom android app. For this investigation, only the ankle data will be used. The app contained buttons for real-time annotation of the data. 
@@ -182,57 +238,208 @@ Twenty-two Participants of a wide variety of age, gender and physique were chose
 
 To convert the raw saved data to a form that Tensorflow could understand from using a processing pipeline was developed in Matlab 2019b. The pipeline consisted of decoding, re-sampling, normalisation, and saving. The data is saved raw from the sensor so needed to be converted from compressed hexadecimal fixed point form to a floating-point representation. The data was then re-sampled to compensate for the difference between the internal sensor clock, the android smartphone clock was used as a common reference for this adjustment. The data was normalised so that for each recording every individual sensor channel had a standard deviation of one and a mean of zero.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Training}
-The adam optimisation algorithm was used, a popular algorithm for problems with large data-sets and or parameters[1]. The training was undertaken using GPU acceleration with models defined using the Keras Tensorflow 2.1.0 language. Initial model weights were set using a Golorot Uniform initialiser. A class weight input was used to bias the training as a balance for in-balanced data labels.
+The adam optimisation algorithm was used, a popular algorithm for problems with large data-sets and or parameters[1]. The training was undertaken using GPU acceleration with models defined using the Keras Tensorflow 2.1.0 language. Initial model weights were set using a Golorot Uniform initialiser. A class weight input was used to bias the training as a balance for in-balanced data labels. A mini batch size of 200 was used with early stopping based on validation data cross entropy loss.
 
 A sliding data window with an offset of 2 samples between them. The offset was set empirically to give the model a wide range of data from any window position without slowing down training from an unnecessarily large data set. The label for each widow was set as the recorded ground truth at the end of the window, these are provided to the network in a one-hot encoding. 
 
 The training data set is divided into two groups a test and training. Test contains 5 participants to be excluded from the training process. The test set is used to access the performance of the models to unseen data novel participants. The training set contains the remaining participants. The training set was reduced so that no label class contains more than 50\% greater labels than any another. For each model, the training data 30\% was retained as validation the remaining 70\% used for training. The data was split randomly but care was taken to ensure the balance of each label type was maintained.
 
 % Analysis methods
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Machine Learning Models}
+What does the model need to solve? 
+The model needs to be able to distinguish which of the the six individual locomotion activities a window of data represents.
+
+In literature most LSTM model are structured as in Figure \ref{fig:full_lstm_model}. The raw sensor data is fed as an input vector into the first LSTM layer of n units. The hidden state vector from this layer is then fed into subsequent LSTM layers. The output of the final LSTM layer is passed into a dense classification layer.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.4\textwidth]{example-image-a}
+    \caption{Illustration of simplified model}
+    \label{fig:full_lstm_model}
+\end{figure}
+
+Looking to understand what features the model is learning. Full model too complex to interpret due to many fully connected steps making following the path of information extremely challenging. If only a single path is provided for information to flow it would be straight forward to determine which parts of an input signal produce what behaviour. To achieve this a simplified model should be used.
+
+% Simplified model - plotting of hidden state
+Single unit single layer network with final hidden state passed to dense layer before a Relu activation and classifier, see Figure \ref{fig:simplifier_lstm_model}. Logits and Relu have been used to ensure no scaling occurs across the network. The simplified model provides only 1 path form information to flow, therefore should be easier to establish which parts of the input signal extracted to classify.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.4\textwidth]{example-image-b}
+    \caption{Illustration of simplified model}
+    \label{fig:simplifier_lstm_model}
+\end{figure}
+
+% How are we simplifying the classification problem so the basic model can solve it
+The simple model would not be able to solve a problem with complexity of the full problem. In order to get a reasonable classification accuracy the problem needs to be simplified. This simplification can be done either through reducing the number of classes or only training the network to understand certain classes. A combination of both will be used, training a the model to classify the three most common activities, W, SA, SD, in different combinations.
+
+\subsection{Analysis methods}
+Hidden state. 
+To observe the change in sate of the network to input data the hidden state for each unit can be plotted. To observe trends the hidden state from many different steps for different activity needs to be shown. As walking cadence varies considerably trends cannot be observed in the time domain. This can be solved by plotting the hidden state normalised in time by percentage gait cycle.
+
+% Confusion matrix of more complex model
+% Confusion matrix from around transition state only
+For the more complex models classification performance class can be shown using a confusion matrix. To observe behaviour around the transition between activities confusion matrices for data windows between 1 step either side of the transition point will also be looked at.
+
+Explanation of leave one participant out cross validation, leave out 5 random participants which can then be presented to the model after training to evaluate it's performance to new unseen data.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}
-% Define axis
+In this section the results of the analysis conducted are presented.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Individual Gait Trends}
+Figure \ref{fig:imu_gait_trends} shows the mean and standard deviation for three difference activities (W, SA, SD) for two individual subjects. The solid line represents the mean of n gait cycles, and the shaded area the standard deviation. Figures \ref{subfig:x_accel_subj_4} and \ref{subfig:x_accel_subj_16} show the acceleration in the x axis for participants four and sixteen respectively. Figure \ref{subfig:x_gyro_subj_4} and \ref{subfig:x_gyro_subj_16} show the angular velocity in the y axis for the same participants.
+
 \begin{figure}[!htb]
      \centering
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
          \includegraphics[width=\textwidth]{Figures/accel_x_trend_Participant_04.jpg}
          \caption{Subject 4 - Acceleration in x}
-         \label{fig:x_accel_subj_4}
+         \label{subfig:x_accel_subj_4}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
          \includegraphics[width=\textwidth]{Figures/gyro_y_trend_Participant_04.jpg}
          \caption{Participant 4 - Angular velocity about y}
-         \label{fig:x_gyro_subj_4}
+         \label{subfig:x_gyro_subj_4}
      \end{subfigure}
      \vskip\baselineskip
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
          \includegraphics[width=\textwidth]{Figures/accel_x_trend_Participant_16.jpg}
          \caption{Subject 16 - Acceleration in x}
-         \label{fig:x_accel_subj_16}
+         \label{subfig:x_accel_subj_16}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
          \includegraphics[width=\textwidth]{Figures/gyro_y_trend_Participant_16.jpg}
          \caption{Participant 16 - Angular velocity about y}
-         \label{fig:x_gyro_subj_16}
+         \label{subfig:x_gyro_subj_16}
      \end{subfigure}
     \caption{Examples of gait trends of two subject for 3 different activities. The solid lines show the mean value for n steps, the shaded area shows the standard deviation}
     \label{fig:imu_gait_trends}
 \end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Simplified Model Hidden State}
+Within this section the hidden state output vector of the simplified model is plotted for the three different activities investigated. Figure x show the hidden state for a model trained to classify x from y \& z.
+
+\begin{figure}[!htb]
+     \centering
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{example-image-a}
+         \caption{0\%}
+         \label{subfig:a}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{example-image-b}
+         \caption{20\%}
+         \label{subfig:b}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{example-image-c}
+         \caption{40\%}
+         \label{subfig:c}
+     \end{subfigure}
+     \vskip\baselineskip
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{example-image-a}
+         \caption{60\%}
+         \label{subfig:d}
+     \end{subfigure}
+     \hspace{0.5em}
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{example-image-b}
+         \caption{80\%}
+         \label{subfig:e}
+     \end{subfigure}
+    \caption{-}
+    \label{fig:hidden-state-}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Full Model}
+
+Confusion matrix showing how classification performance for all and just transitions
+\begin{table}[!hbt]
+    \centering
+    \caption{Caption}
+    \label{tab:my_label}
+    \begin{tabular}{c|c}
+        1 & 2 \\
+        \hline
+        3 & 4 \\
+        5 & 6
+    \end{tabular}
+    
+\end{table}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Table of accuracy for different hparams (units, window size) for seen/unseen subjects
+\begin{table}[!hbt]
+    \centering
+    \caption{Model accuracy for hyper-parameters for layer units and input window size for both seen and novel subjects}
+    \label{tab:-}
+    \begin{subtable}{.49\linewidth}
+        \centering
+        \caption{Accuracy for seen validation data}
+        \label{tab:my_label}
+        \begin{tabular}{c|c}
+            1 & 2 \\
+            \hline
+            3 & 4 \\
+            5 & 6
+        \end{tabular}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.49\linewidth}
+        \centering
+        \caption{Accuracy for unseen test data}
+        \label{tab:my_label}
+        \begin{tabular}{c|c}
+            1 & 2 \\
+            \hline
+            3 & 4 \\
+            5 & 6
+        \end{tabular}
+    \end{subtable}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Graphs showing how performance changes vs the number of subjects in the study for a couple of different models
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.4\textwidth]{example-image-b}
+    \caption{Classification accuracy for novel subjects are training with different numbers of participants}
+    \label{fig:subject_num_generalisation}
+\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}
+Gait cycle - talk about key points in gyro y (first maxima after peak swing is a pseduo for heel strike, second maxima - toe off). Stance occurs between these two points. SA gives higher stance angular velocity in y, this was also observed by x \cite{}
+
+Talk about how the SD and W are difficult to separate by looking at the graph.
+
+What justification do we have for comparing the simple and complex model
+
+The simplified model achieves high accuracy despite it's limited learning ability, albeit on a simplified problem. Therefore the higher accuracy achieved on the full model may in part be by learning the minute personal trends of the data for the participants. This may explain why the models struggle to generalise for new participants unless the model has been trained on a person with similar gait.
+
+Window size doesn't affect performance, as long as the window cover the stance phase the simplified model was able to identify the class. Therefore a window size of greater than one gait cycle offers no benefit as the last stance phase observed sets the final output.
+
+What can we do the solve the problems identified above?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
