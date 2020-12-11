@@ -63,6 +63,7 @@
 % Add packages and commands here. The following packages are loaded in our class file: fontenc, calc, indentfirst, fancyhdr, graphicx, lastpage, ifthen, lineno, float, amsmath, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, amsthm, hyphenat, natbib, hyperref, footmisc, geometry, caption, url, mdframed, tabto, soul, multirow, microtype, tikz
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{wrapfig}
 
 \usepackage[colorinlistoftodos]{todonotes}
 %=================================================================
@@ -176,7 +177,7 @@ Labarri\`ere et al has produced a systematic review of the machine learning meth
 
 Ben-Yue Su et al present work investigating intent prediction for trans-tibial amputees using IMU data fed into a CNN network\cite{Su2019} The 10 able-bodied and 1 trans-tibial amputee were asked to perform short walks traversing a short stair case and ramp as with a level surface either side. The able bodied subjects wore a hands-free crutch. Three IMUs were attached to the thigh, shank and ankle of the “healthy” leg.
 
-Murad and Pyun presented a paper investigating human activity recognition using Deep LSTM network\cite{Murad2017}. They train their network on common ADL datasets presenting their performance in comparison to other work on these datasets. The network they used took the raw IMU data as it's input then interpreted the data using four LSTM layers before a late fusion and softmax classifer were user to produce a class output, see Figure \ref{fig:murad_lst_network_structure}. Performance was very impressive achieving between 92 \& 97\% accuracy and an improvement on the presented previous classification attempts using of CNN, SVM and others networks.
+Murad and Pyun presented a paper investigating human activity recognition using Deep LSTM network\cite{Murad2017}. They train their network on common ADL datasets presenting their performance in comparison to other work on these datasets. The network they used took the raw IMU data as it's input then interpreted the data using four LSTM layers before a late fusion dense layer and a softmax classifer were user to produce a class output, see Figure \ref{fig:murad_lst_network_structure}. Performance was very impressive achieving between 92 \& 97\% accuracy and an improvement on the presented previous classification attempts using of CNN, SVM and others networks.
 
 \begin{figure}[!htb]
     \centering
@@ -228,17 +229,26 @@ Like a standard RNN an LSTM contains between each time step and between each lay
 What are common structures of an LSTM network? <<<NEEDS MORE>>>
 
 %MARG HAR Data
-\section{IMU Gait Properties}
-It has been shown that gait cycle can be established from only the shank rotational velocity in the sagittal plane using a technique originally presented by Sabatini et al\cite{Sabatini2005}. The method uses the extreme of the rotational velocity as pseudo references for heel strike and toe off as seen in Figure \ref{fig:y-gyro-hs-to}. The accuracy of these points has been established to be within <<<FIND REFERENCE>>>
+\section{Human Gait Cycle}
+A complete gait cycle is defined between two successive Initial Contact (IC) event of the same limb. IC is the point at which any part of the foot contacts the ground. As this is normally the heel this is often refereed to as Heel Strike (HS). The full cycle can be divided into two phases; stance - when the foot is on the ground, and swing when not. The transition from stance to swing is marked by the Toe Off (TO) event and conversely by (HS). The full gait cycle is shown in Figure \ref{fig:gait_cycle}.
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.4\textwidth]{example-image-a}
-    \caption{Gait cycle feature extraction from y-axis gyroscope}
+    \includegraphics[width=0.8\textwidth]{Figures/Gait_Cycle.jpg}
+    \caption{Human Gait Cycle}
+    \label{fig:gait_cycle}
+\end{figure}
+
+It has been shown that gait cycle can be established from only the shank rotational velocity in the sagittal plane using a technique originally presented by Sabatini et al\cite{Sabatini2005}. The method uses the minima following peak swing angular velocity to approximate heel strike. Toe off as identified as the half way point between the zero crossing and the minima before peak swing. Figure \ref{fig:y-gyro-hs-to} illustrates this.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/gyro_trace_hs.jpg}
+    \caption{Gait events extracted from the Sagittal plane gyroscope signal, adapter from \cite{Sabatini2005}}
     \label{fig:y-gyro-hs-to}
 \end{figure}
 
-Coley et al also noted that variation in sagittal plane shank rotational velocity occur during different activities. During early stance there is an increase in rotational velocity during stair descent and a decrease in rotational velocity during stair ascent.\cite{Coley2005}
+Coley et al noted that the variation in shank sagittal plane rotational velocity occur during different activities. During early stance there is an increase in rotational velocity during stair descent and a decrease in rotational velocity during stair ascent.\cite{Coley2005}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -246,9 +256,10 @@ Coley et al also noted that variation in sagittal plane shank rotational velocit
 % The following section describes the methodology used to investigate the proposed research question.
 
 \section{Data Collection}
-In order to investigate machine learning methods a suitable data set is required. This must have the following characteristics, a large number of participants > 20???? with multiple activities captured in a range of environments with transitions between both.
+In order to investigate machine learning methods a suitable data set is required. This must have the following characteristics, a large number of participants > 20???? with multiple activities captured in a range of environments with transitions between both. <<<NEEDS MORE>>>
 
-No amputee data found - will work can be tested on able bodied participants and amputees used later. Able bodied have less varied gait characteristics than amputee 
+No amputee data found - will work can be tested on able bodied participants and amputees used later. Able bodied have less varied gait characteristics than amputee both. <<<NEEDS MORE>>>
+
 % Exsisting data sets
 There are several commonly used data sets for able-bodied activity recognition. The OPPORTUNITY activity recognition dataset\cite{roggan2010} contains 18 activity classes for Activities of Daily Living (ADL) such as opening/closing doors and drinking from a cub. Each subject wore seven IMUs and 12 3-axis accelerometers while they preformed the prescribed actions. The UCI-HAD dataset\cite{Anguita2013} recorded subject performing six activities; walking, stair ascent, stair descent, sitting, standing and laying, while recording data from the on board MARG of a waist mounted smart phone. Both of these data sets were recorded in controlled conditions so do not capture any variation in activity that may occur due to the environment. Sztyler and Stuckenschmidt collected data from 15 subjects performing eight activities while wearing six wearable sensors. Recording took place in the same natural environment for each activity, however only steady state activities were capture not the transition between.\cite{Sztyler2017} 
 
@@ -270,18 +281,20 @@ The data from each sensor was streamed from each sensor at 100Hz to a custom and
 \begin{figure}[!hbt]
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{example-image-a}
-         \caption{Subject wearing the five IMU sensors on the ankles, hips and chest}
+         \includegraphics[height=250px]{Figures/movesense/sensor_locations.jpg}
+         \captionsetup{justification=centering}
+         \caption{Subject wearing the Movesense IMU sensors on both ankles, hips and the chest}
          \label{subfig:movesense_sensors}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.49\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{example-image-b}
-         \caption{Android app used to record and live annotate the data}
+         \includegraphics[height=250px]{Figures/movesense/app_recording_short.jpg}
+         \captionsetup{justification=centering}
+         \caption{Custom Android app used to record and annotate the sensor data}
          \label{subfig:android_app}
      \end{subfigure}
-    \caption{Recording setup}
+    \caption{Data recording setup}
     \label{fig:imu_sensors and app}
 \end{figure}
 
@@ -314,13 +327,15 @@ A total of 268 minutes of data was collected that included 1170 transitions betw
 To convert the raw saved data to a form that Tensorflow could understand from using a processing pipeline was developed in Matlab 2019b. The pipeline consisted of decoding, re-sampling, normalisation, and saving. The data is saved raw from the sensor so needed to be converted from compressed hexadecimal fixed point form to a floating-point representation. The data was then re-sampled to compensate for the difference between the internal sensor clock, the android smartphone clock was used as a common reference for this adjustment. The data was normalised so that for each recording every individual sensor channel had a standard deviation of one and a mean of zero.
 
 % Data axis system
-The following axis system will be used when presenting and analysing the results. The axes uses a right hand convention, $x$ is forward towards the front of the foot, $y$ toward the left of the body and $z$ upwards. Figure \ref{fig:data_axis} illustrates this.<<<NEEDS MORE>>>
+The following axis system will be used when presenting and analysing the results. The axes uses a right hand front left up convention. $x$ is forward towards the front of the foot, $y$ toward the left of the body and $z$ upwards. Figure \ref{fig:data_axis} illustrates this.<<<NEEDS MORE>>>
+% \begin{wrapfigure}{l}{0.5\textwidth}
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.4\textwidth]{example-image-a}
-    \caption{Data axis}
+    \includegraphics[width=0.4\textwidth]{Figures/ankle_axis.jpg}
+    \caption{Right ankle data axis}
     \label{fig:data_axis}
 \end{figure}
+% \end{wrapfigure}
 
 For the simplicity of data analysis within this paper the start of the gait cycle will be defined as the peak swing velocity as measured in the gyroscope y axis. Gait cycle is given as percentage of the time period of the each gait cycle, peak swing to peak swing.<<<NEEDS MORE>>>
 
@@ -339,7 +354,7 @@ The training data set is divided into two groups a test and training. The test s
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=0.4\textwidth]{example-image-a}
+    \includegraphics[width=0.8\textwidth]{Figures/lstm/Simplified_Network.jpg}
     \caption{Illustration of simplified model}
     \label{fig:full_lstm_model}
 \end{figure}
@@ -347,14 +362,7 @@ The training data set is divided into two groups a test and training. The test s
 Looking to understand what features the model is learning. Full model too complex to interpret due to many fully connected steps making following the path of information extremely challenging. If only a single path is provided for information to flow it would be straight forward to determine which parts of an input signal produce what behaviour. To achieve this a simplified model should be used.
 
 % Simplified model - plotting of hidden state
-Single unit single layer network with final hidden state passed to dense layer before a Relu activation and classifier. Logits and Relu have been used to ensure no scaling occurs across the network. The simplified model provides only 1 path form information to flow, therefore should be easier to establish which parts of the input signal extracted to classify. The hidden state of the model can be extracted by copying the LSTM weights and biases from the trained model to a new model which outputs just the full sequence of hidden state. This process is illustrated in see Figure \ref{fig:simplifier_lstm_model}.
-
-\begin{figure}[!htb]
-    \centering
-    \includegraphics[width=0.4\textwidth]{example-image-b}
-    \caption{Simplified LSTM network and extraction of internal hidden state}
-    \label{fig:simplifier_lstm_model}
-\end{figure}
+Single unit single layer network with final hidden state passed to dense layer before a Relu activation and classifier. Logits and Relu have been used to ensure no scaling occurs across the network. The simplified model provides only 1 path form information to flow, therefore should be easier to establish which parts of the input signal extracted to classify. The hidden state of the model can be extracted by copying the LSTM weights and biases from the trained model to a new model which outputs just the full sequence of hidden state.
 
 % How are we simplifying the classification problem so the basic model can solve it
 Justification for simplifying the problem. The simple model is not complex enough to solve the full problem, as such in order to get a reasonable classification accuracy the problem needs to be simplified. This simplification can be done either through reducing the number of classes or only training the network to understand certain classes. How are we simplifying the problem? A combination of both will be used, training the model to classify the three most prevalent activities in the data set, W, SA, SD, in different combinations. For example a walking class and a stair class (SA and SD). Why are we only looking at the ankle sensor? <<<NEEDS MORE>>>
@@ -406,7 +414,7 @@ In order to gauge how different each subject gait is the trends for different ac
          \caption{Subject 16 - Shank angular velocity about y axis}
          \label{subfig:x_gyro_subj_16}
      \end{subfigure}
-    \caption{Examples of gait trends of two subject for 3 different activities. The solid lines show the mean value for n steps, the shaded area shows the standard deviation}
+    \caption{Gait trends of two subject for 3 different activities. The solid lines show the mean value for n steps, the shaded area shows the standard deviation. Black solid - Walking, Red dashed - Stair Ascent, Blue dot dash - Stair Descent}
     \label{fig:imu_gait_trends}
 \end{figure}
 
@@ -458,35 +466,35 @@ Figures \ref{fig:hidden-state-gyro-y-w_v_sa-sd} and \ref{fig:hidden-state-accel-
      \centering
      \begin{subfigure}[b]{0.32\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_w_v_sa-sd/0_Participant_04.jpg}
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/0_Participant_04.jpg}
          \caption{0\%}
          \label{subfig:gyro_y_w_v_sa_sd_0}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.32\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_w_v_sa-sd/20_Participant_04.jpg}
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/20_Participant_04.jpg}
          \caption{20\%}
          \label{subfig:gyro_y_w_v_sa_sd_20}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.32\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_w_v_sa-sd/40_Participant_04.jpg}
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/40_Participant_04.jpg}
          \caption{40\%}
          \label{subfig:gyro_y_w_v_sa_sd_40}
      \end{subfigure}
      \vskip\baselineskip
      \begin{subfigure}[b]{0.32\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_w_v_sa-sd/60_Participant_04.jpg}
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/60_Participant_04.jpg}
          \caption{60\%}
          \label{subfig:gyro_y_w_v_sa_sd_60}
      \end{subfigure}
      \hspace{0.5em}
      \begin{subfigure}[b]{0.32\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_w_v_sa-sd/80_Participant_04.jpg}
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/80_Participant_04.jpg}
          \caption{80\%}
          \label{subfig:gyro_y_w_v_sa_sd_80}
      \end{subfigure}
@@ -541,7 +549,7 @@ With the x accelerometer as in input there is less tightly grouped hidden state 
 No gain from having a window size greater than one step, classification only occurs in one phase of the cycle. It appear that to gain higher accuracy the model would need to learn more personalised information. For both input signals a similar behaviour was observed for all the output class sets.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Full Problem}
+ \subsection{Full Problem}%<TK>
 The following section presents the results of investigations into how model performance changes with adjustments of hyper-parameters. The hyper-parameters selected for this were; network shape, input window size, unit width, depth, the number of inputs, varying sensors and axis, and number of participants.
 
 For network size three different window sizes (32, 64 and 128 timesteps) and size different unit widths (4, 6, 8, 16, 32, 64) were tested. Each model shape was trained five times for the five different train/test data sets. Table \ref{tab:model_size_hyper_param} presents the model accuracy achieved for each models $\pm$ standard deviation. Table \ref{tab:model_size_hyper_param_train} and \ref{tab:model_size_hyper_param_test} show the validation and unseen participant test accuracy respectively for each configuration.
@@ -591,37 +599,57 @@ Figure \ref{fig:subject_num_generalisation} presents the changes in accuracy for
     \label{fig:subject_num_generalisation}
 \end{figure}
 
-What does this show? <<<NEEDS MORE>>>
+Figure \ref{fig:subject_num_generalisation} shows that increasing the number of participants leads to better generalised performance, however the effects on increasing numbers of participants levels off around 15 participants. This would indicate that for novel subjects to achieve the high levels of classification performance that are possible with an LSTM increasing the number of subjects alone may not be enough.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Confusion matrix showing how classification performance for all and just transition regions
+Table \ref{tab:128x6_full_model_confusion_matrix} shows the confusion matrices for a 128 timestep, 6 unit single layer LSTM network. Table \ref{tab:full_model_conf_matrix_training_128x6} is for the training validation data and Table \ref{tab:full_model_conf_matrix_test_128x6} the unseen test data. Table \ref{tab:128x32_full_model_confusion_matrix} shows the same for a model with 32 units. The 6 unit model had a overall classification accuracy of 87.4\% for validation and 84.7\% for test, the 32 unit model accuracy was 96.1\% and 76.0\%.
 
 \begin{table}[!hbt]
     \centering
-    \caption{128 timestep, 6 unit confusion matrix}
+    \caption{128 timestep, 6 unit confusion matrices}
     \label{tab:128x6_full_model_confusion_matrix}
     \begin{subtable}{.45\textwidth}
         \centering
-        \caption{Training}
-        \label{tab:full_model_conf_matrix_training}
+        \caption{Validation}
+        \label{tab:full_model_conf_matrix_training_128x6}
         \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x6_NT.jpg}
     \end{subtable}
     \hfil
     \begin{subtable}{.45\textwidth}
         \centering
         \caption{Test}
-        \label{tab:full_model_conf_matrix_test}
+        \label{tab:full_model_conf_matrix_test_128x6}
         \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x6_NT.jpg}
     \end{subtable}
 \end{table}
 
-What does this show? <<<NEEDS MORE>>>
-Where do miss-classification occur?
+\begin{table}[!hbt]
+    \centering
+    \caption{128 timestep, 32 unit confusion matrices}
+    \label{tab:128x32_full_model_confusion_matrix}
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Validation}
+        \label{tab:full_model_conf_matrix_training_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x32_NT.jpg}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Test}
+        \label{tab:full_model_conf_matrix_test_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x32_NT.jpg}
+    \end{subtable}
+\end{table}
+
+It can be seen that nearly all miss-classifications are a confusion with walking. The test data showed a similar patterns for both models even though the 32 unit model is over-fitted to the training data. Some miss-classifications will be due to under labelled or discrepancies in point of labeling during recording.
+
+Ramp descent and ascent the most confused. This is likely because of the similarities in gait cycle between the two activities and the difficulty is accurately labelling this activity due to subject biases on what constitutes a ramp. Stairs get slightly confused between each other but again mostly with walking. Stair Descent performs worse than stair ascent again this is likely due to it's closer gait shape to walking. It's not obvious why stop performs poorly.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Some miss-classifications occur due to under labelled or misalignment of labels. For example - a single step may be classified as a stair descent/ascent but would not be labelled by the subject. Or different subjects pushing labelling the start of each activity at different point.
 
-Figure \ref{fig:missclassification} shows the location of classifications as well as the current locomotion activity. As can be seen a large proportion of miss-classification occur around changes in activity.
+Figure \ref{fig:missclassification} shows a visual representation of the activities labelled during a recording above which is a plot of where the classification errors occur ed during that recording. As can be seen a large proportion of miss-classification occur around changes in activity. The transition between activities is highly varied.
+
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=0.8\textwidth]{Figures/results/Screenshot 2020-12-02 130339.png}
@@ -629,18 +657,15 @@ Figure \ref{fig:missclassification} shows the location of classifications as wel
     \label{fig:missclassification}
 \end{figure}
 
-What does this show? <<<NEEDS MORE>>>
-
 \section{Improving Novel User Performance}
 From the above analysis it can be seen that the model performed more poorly when presented with new data in particular around changes in activity. To try and improve this an additional transition state was added to the model
 
 % Methodology
-An additional generic transition state was added to the classification output with the aim of capturing cases where the model is less certain of the class. The data set was augmented with an a transition region added for 0.5 seconds before and after changes in activity label. This model was then trained as with the full model using the excluded participant cross validation.
-
-A 128 timestep 6 unit and 32 unit models were used to evaluate performance. Below are the confusion matrices for this model
+The transition state was added to the classification output and the label data augmented with a transition region added for 0.5 seconds before and after changes in activity. A model was then trained again using the excluded participant cross validation to establish generalisation performance. Two model were trained with 128 time steps and 6 and 32 unit.
 
 % Results
-In tables x \& y present the confusion matrices for the trained models.
+Tables \ref{tab:128x6_transition_confusion_matrix} and \ref{tab:128x32_transition_confusion_matrix} present the confusion matrices for the transition models trained with 6 and 32 units respectively. The 6 unit model achieved 82.8\% accuracy on validation data and 72.4\% for test, and the 32 unit model achieved 93.1\% and 69.3\%. If the transition state is excluded from the classification accuracy then when presented with test data the models achieve 75.2\% and 75.0\% accuracy for the 6 and 32 unit models respectively
+
 \begin{table}[!hbt]
     \centering
     \caption{128x6 Transition Model}
@@ -648,51 +673,56 @@ In tables x \& y present the confusion matrices for the trained models.
     \begin{subtable}{.45\textwidth}
         \centering
         \caption{Training}
-        \label{tab:tran_model_conf_matrix_training}
+        \label{tab:tran_model_conf_matrix_training_128x6}
         \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x6_T.jpg}
     \end{subtable}
     \hfil
     \begin{subtable}{.45\textwidth}
         \centering
         \caption{Test}
-        \label{tab:tran_model_conf_matrix_test}
+        \label{tab:tran_model_conf_matrix_test_128x6}
         \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x6_T.jpg}
     \end{subtable}
 \end{table}
 
+\begin{table}[!hbt]
+    \centering
+    \caption{128x6 Transition Model}
+    \label{tab:128x32_transition_confusion_matrix}
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Training}
+        \label{tab:tran_model_conf_matrix_training_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x32_T.jpg}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Test}
+        \label{tab:tran_model_conf_matrix_test_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x32_T.jpg}
+    \end{subtable}
+\end{table}
+
 % Analysis
-This method did not improve performance - transition state hard to predict
-Transition state as described is a very highly uncertain region and so the model did not learn the expected behaviour
-
-Could look at other classification outputs to see if uncertainty is show by higher outputs in other classes
-
+This method did not improve performance, equal or worse performance than without the transition state, even when excluding the transition state for classification accuracy. The transition region is highly uncertain and so the model will struggle to learn the expected behaviour.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}% TODO: Write up properly
-Talk about how the SD and W are difficult to separate by looking at the graph.
-
-What justification do we have for comparing the simple and complex model
+%What did we learn from the simplified model and how was it useful in the full model?
+The simplified model gave an insight into which areas of the gait cycle to model is likely to learn. The observations made from this appear to match up well with the larger model performance. Window size doesn't affect performance, as long as the window cover the stance phase the simplified model was able to identify the class. Therefore a window size of greater than one gait cycle offers no benefit as the last stance phase observed sets the final output. As was seen increasing subjects would not necessarily lead to a model that could generalise well to novel subject. As amputees have gaits that are much more varied between individuals this is significantly less likely to work.
 
 The simplified model achieves high accuracy despite it's limited learning ability, albeit on a simplified problem. Therefore the higher accuracy achieved on the full model may in part be by learning the minute personal trends of the data for the participants. This may explain why the models struggle to generalise for new participants unless the model has been trained on a person with similar gait. 85\% appears to be an upper bound for LSTM using just IMU data when presenting novel users, instead of as Dehghani et al stated and over estimation of performance.
 
-It's not really obvious why such deep models have been used in literature and they seem to offer negligible improvements in performance for there size.
+It was not really obvious why such deep models have been used in literature and they seem to offer negligible improvements in performance versus there size and result it models that very easily over fit.
 
-Window size doesn't affect performance, as long as the window cover the stance phase the simplified model was able to identify the class. Therefore a window size of greater than one gait cycle offers no benefit as the last stance phase observed sets the final output.
-
-Increasing participants would not necessarily work, amputees have much more varied gait than able-bodied so is unlikely to work
-
-How did the methods we tried improve performance
-
-What can we do the solve the problems identified above? personalisation
-
+The results of this work suggest that simply modifying adjusting the LSTM model hyper-parameters is not enough to produce a model that performs well with unseen users. Alternative approaches are therefore required to solve this problem. Additions to the output such smoothing to combine multiple classifications. Or more complex classifiers where more than just the maximum output value is used, instead classes are used establish how confident the model is. A system of personalisation could also be developed to adapt the model to an individual. It would be of interest to established whether a model trained from able-bodied users could be adapted to lower limb amputees.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}% TODO: Write up properly
 In this paper, we have presented a new data set for HAR research that...
 
-We have investigated the behaviour of an LSTM using 
-
-Demonstrated that the learning is applicable to more complex models
+We have investigated the behaviour of an LSTM using able-bodied subjects to provide suitable quantities of data. We have demonstrated that the learning is applicable to more complex models
 
 Attempted to improve novel user performance by accounting for transitions between activities
 
