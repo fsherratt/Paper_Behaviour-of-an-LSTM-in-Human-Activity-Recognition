@@ -140,24 +140,26 @@ $^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
 \section{Introduction} % TODO Write up properly
 %purpose/uses of HAR
 % Don't talk about replacing muscles talk about acting in unison with the user. Make it more general to prosthetic including knees as well as ankles. 
-During locomotion it is taken for granted that both legs will act in unison adapting to the environment and activity without thought. For lower limb amputees this ability is lost. To restore this ability perception of user intent must be achieved, outside of prosthesis this is often termed Human Activity Recognition (HAR). For powered prosthesis this will likely be implemented though the automatic selection of locomotive mode\cite{Tucker2015, Windrich2016, Zhang2015}. In order for amputees to have confidence in the device the classification must be timely, accurate and consistent\cite{Pedroli2019, Sinha2011}. The classifier will also need to be able adaptable to account for the individual gait characteristics\cite{Ponce2016}.
+During locomotion it is taken for granted that both legs will act in unison adapting to the environment and activity without thought. For lower limb amputees this ability is lost. To restore this ability, perception of user intent must be achieved. Outside of prosthesis this is often termed Human Activity Recognition (HAR). For powered prosthesis HAR will likely be implemented though the automatic selection of locomotive mode\cite{Tucker2015, Windrich2016, Zhang2015}. For amputees to have confidence in the device, recognition must be timely, accurate and consistent\cite{Pedroli2019, Sinha2011}. The recognition algorithm or classifier will also need to be able adaptive to account for the individual gait characteristics\cite{Ponce2016}.
 %Intent recognition uses sensory information to differentiate\cite{Fluit2020} between activity modes that require a specific controller.
 
 % Something about heuristics and current state of the art in prosthesis
-"The concept of intent or gait mode recognition classifies sensory user input in order to conclude the intentions or recognize the gait of the user. Based on the classification the prosthesis is set to the corresponding locomotive mode"\cite{Windrich2016}. Conventionally HAR in prosthesis has been achieved through heuristic methods which are hand tuned to the individual\cite{Maqbool2017, Xu2018} with the commercial market favors this approach due to safety and regulatory concerns\cite{Fluit2020}. The current state of the art focuses on the use of Machine Learning to classify activities\cite{Labarriere2020}.
+``The concept of intent or gait mode recognition classifies sensory user input in order to conclude the intentions or recognize the gait of the user. Based on the classification the prosthesis is set to the corresponding locomotive mode'' \cite{Windrich2016}. 
+
+Conventionally HAR in prosthesis has been achieved through heuristic methods which are hand-tuned to the individual\cite{Maqbool2017, Xu2018}. The commercial market favors this approach due to safety and regulatory concerns\cite{Fluit2020}. The current state of the art focuses on the use of Machine Learning to classify activities\cite{Labarriere2020}.
 
 % More general Human activity recognition techniques and issues
-In HAR more generally LSTM have been demonstrated to provide exceptional performance\cite{Murad2017} although there use in prosthetic research is very limited, very little work has been done investigating this in the context of prosthesis\cite{Fluit2020}
+In HAR recognition tasks Long Short-Term Memory(LSTM) have been demonstrated to provide exceptional performance\cite{Murad2017} although very little work has been done investigating this in the context of prosthesis\cite{Fluit2020}.
 
 % Problems\Research gaps
-LSTM have been shown to achieve high levels of accuracy but the mechanisms by which they achieve this is limited. They have also only been tested on data collected in controlled conditions
+LSTM have been shown to achieve high-levels of accuracy but the mechanisms by which they achieve this is limited. They have also only been tested on data collected in controlled conditions,
 
 % How we going about answering research gap/question
-In this paper we explore behaviour of LSTM network in HAR as a mechanism for improving performance and robustness of these models. Amputee data is hard to obtain, a more varied data set can be achieved through the use of able-bodied participants who present a much lower risk. The major contributions of this work are as follows:
+This paper explores in detail the behaviour of LSTM networks in HAR with the intent of improving performance and robustness of these models. Amputee data is hard to obtain, a more varied data set can be achieved through the use of able-bodied participants who present a much lower risk. The contributions of this work are as follows:
 %In this paper, we train simplified LSTM networks to classify simplified HAR problems. These models are then analysed in detail to understand their operation. The understanding from this is then compared with the performance of a complex networks to demonstrate this learning can be applied more generally. The major contributions of this work are as follows:
 \begin{enumerate}
-\item Methodology for and collection of a self supervised IMU data set for human activity data in a natural environments
-\item Provide an insight into the behaviour of an LSTM HAR model and why that limits it's generalisation (method for visually understanding lstm)
+\item Methodology for and collection of a self-supervised IMU data set for human activity data in a natural environments.
+\item Provide an insight into the behaviour of an LSTM HAR model and why that limits it's generalisation (method for visually understanding lstm).
 \item Investigation of model modification to reduce model confusion around the transition between locomotion modes.
 \end{enumerate}
 
@@ -171,7 +173,7 @@ Introductory paragraph <<<NEEDS MORE>>>
 % LSTM seems to work really well in HAR challenges
 % Although it's not obvious why and seems to struggle with novel users
 
-LSTM exo-skeleton\cite{Wang2018}, identifies sitting down, standing up, level-ground walking, ascending stairs, and descending stair activities based on angle informations from hip, knee and ankle joints. Uses a deep lstm architecture to select modes.
+LSTM exo-skeleton\cite{Wang2018}, identifies sitting down, standing up, level-ground walking, ascending stairs, and descending stair activities based on angle information from hip, knee and ankle joints. Uses a deep LSTM architecture to select modes.
 
 Labarri\`ere et al has produced a systematic review of the machine learning methods used in activity recognition for assistive device\cite{Labarriere2020}. Labbrrie\`ere found the most common activities to are Walking, Stair Ascent, Stair Descent, Ramp Ascent, Ramp Descent.
 
@@ -190,12 +192,14 @@ A different network configuration used for each data set and there are large dif
 
 Dehghani et al investigate the metrics used to evaluate the performance of classifiers in regard to there performance to previously unseen data presented using k-fold cross-validation methods\cite{Dehghani2019}. The papers found implement various forms of k-fold validation but none using LSTM use a subject based cross-validation. Instead, they either leave out individual windows \cite{Murad2017, Wang2020}<TK> or, when multiple data sets are recorded for participants, individual recordings \cite{Ordonez2016}<TK>. Dehghani found that this overestimates performance by 10-16\%. Studies that have left individuals out found accuracies closer of 86.7\% \cite{Zhao2018}. The reason for the poor generalisation when presented with a novel user has not been investigated.
 
+A short summary of previous work section to be added.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{LSTM Theory} 
 \label{sec:lstm_therory}
 % What are RNN
-An Recurrent Neural Network (RNN) is a ML architecture designed to handle temporal and sequential data. It contains not just forward connections but also horizontal connections between time steps, see Figure \ref{fig:rnn_structure}.
+An Recurrent Neural Network (RNN) is a ML architecture designed to handle temporal and sequential data, similar to that encountered by HAR problems. It contains not just forward connections but also horizontal connections between time steps, see Figure \ref{fig:rnn_structure}.
 
 \begin{figure}[!hbt]
     \centering
@@ -212,7 +216,7 @@ The activation of each cell is dependent on both it's inputs and the hidden stat
 \end{equation}
 
 %What problems exist with them 
-RNNs have been shown to produce good results in some sequential task but there application is limited by there difficulty to train, primarily the vanishing/exploding gradient problem. During gradient based training methods repeated multiplication  by values that are not near 1 along long decency chains result in either vanish or explode. A vanishing gradients makes it difficult to know which direction the parameters should move to improve the cost function, while exploding gradients can make learning unstable. Non-gradient based training have been tried although to limited success. \cite{Graves2012, Goodfellow2015}
+RNNs have been shown to produce good results in some sequential task but there application is limited by there difficulty to train, primarily the vanishing/exploding gradient problem. During gradient based training methods repeated multiplication by values that are not near 1 along long decency chains result in either vanish or explode. A vanishing gradients makes it difficult to know which direction the parameters should move to improve the cost function, while exploding gradients can make learning unstable. Non-gradient based training have been tried although to limited success. \cite{Graves2012, Goodfellow2015}
 
 % LSTM
 The Long Short Term Memory (LSTM) architecture solve the vanishing gradient problems by allowing information to be retained for long periods. Originally created by Hochreiter and Schmidhuber in 1997\cite{Hochreiter1997} the LSTM is an RNN style architecture but includes additional paths to control information flow between cells, see Figure \ref{fig:lstm_unit}. Information flowing along the cell state can be modulated by the input and forget gate structures. The final output of the unit is a filtered version of the cell state, the filtering is done based on context from the hidden state.\cite{Olah2015}   % Tensorflow implements the basic cell described by Hochreiter
@@ -229,8 +233,8 @@ Like a standard RNN an LSTM contains between each time step and between each lay
 What are common structures of an LSTM network? <<<NEEDS MORE>>>
 
 %MARG HAR Data
-\section{Human Gait Cycle}
-A complete gait cycle is defined between two successive Initial Contact (IC) event of the same limb. IC is the point at which any part of the foot contacts the ground. As this is normally the heel this is often refereed to as Heel Strike (HS). The full cycle can be divided into two phases; stance - when the foot is on the ground, and swing when not. The transition from stance to swing is marked by the Toe Off (TO) event and conversely by (HS). The full gait cycle is shown in Figure \ref{fig:gait_cycle}.
+\section{HAR in the Human Gait Cycle}
+A complete gait cycle is defined between two successive Initial Contact (IC) event of the same limb. IC is the point at which any part of the foot contacts the ground. As this is normally the heel, it is often refereed to as Heel Strike (HS). The full cycle can be divided into two phases; stance - when the foot is on the ground, and swing when not. The transition from stance to swing is marked by the Toe Off (TO) event and conversely by (HS). The full gait cycle is shown in Figure \ref{fig:gait_cycle}.
 
 \begin{figure}[!htb]
     \centering
@@ -239,7 +243,7 @@ A complete gait cycle is defined between two successive Initial Contact (IC) eve
     \label{fig:gait_cycle}
 \end{figure}
 
-It has been shown that gait cycle can be established from only the shank rotational velocity in the sagittal plane using a technique originally presented by Sabatini et al\cite{Sabatini2005}. The method uses the minima following peak swing angular velocity to approximate heel strike. Toe off as identified as the half way point between the zero crossing and the minima before peak swing. Figure \ref{fig:y-gyro-hs-to} illustrates this.
+It has been shown that gait cycle can be established from only the shank rotational velocity in the sagittal plane using a technique originally presented by Sabatini et al\cite{Sabatini2005}. The method uses the minima following peak swing angular velocity to approximate HS. TO as identified as the half way point between the zero crossing and the minima before peak swing. Figure \ref{fig:y-gyro-hs-to} illustrates this.
 
 \begin{figure}[!htb]
     \centering
@@ -250,12 +254,13 @@ It has been shown that gait cycle can be established from only the shank rotatio
 
 Coley et al noted that the variation in shank sagittal plane rotational velocity occur during different activities. During early stance there is an increase in rotational velocity during stair descent and a decrease in rotational velocity during stair ascent.\cite{Coley2005}
 
+So what?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \section{Methodology}
 % The following section describes the methodology used to investigate the proposed research question.
 
-\section{Data Collection}
+\section{Data Collection with Custom App}
 In order to investigate machine learning methods a suitable data set is required. This must have the following characteristics, a large number of participants > 20???? with multiple activities captured in a range of environments with transitions between both. <<<NEEDS MORE>>>
 
 No amputee data found - will work can be tested on able bodied participants and amputees used later. Able bodied have less varied gait characteristics than amputee both. <<<NEEDS MORE>>>
@@ -362,6 +367,8 @@ The training data set is divided into two groups a test and training. The test s
 Looking to understand what features the model is learning. Full model too complex to interpret due to many fully connected steps making following the path of information extremely challenging. If only a single path is provided for information to flow it would be straight forward to determine which parts of an input signal produce what behaviour. To achieve this a simplified model should be used.
 
 % Simplified model - plotting of hidden state
+
+\subsection{Simplfied LSTM}
 Single unit single layer network with final hidden state passed to dense layer before a Relu activation and classifier. Logits and Relu have been used to ensure no scaling occurs across the network. The simplified model provides only 1 path form information to flow, therefore should be easier to establish which parts of the input signal extracted to classify. The hidden state of the model can be extracted by copying the LSTM weights and biases from the trained model to a new model which outputs just the full sequence of hidden state.
 
 % How are we simplifying the classification problem so the basic model can solve it
@@ -370,6 +377,7 @@ Justification for simplifying the problem. The simple model is not complex enoug
 % Analysis methods
 To observe the change in information level within network the hidden state value will be used. This will be plotted such that patterns in output for different activities can be seen. To achieve this multiple windows of data will be plotted over top each other all with the same starting point. To account for variation in gait cadence throughout the data set the x axis will be plotted as percentage of gait cycle. Each different activity will be plotted independently. The information gained from these observations will be tested against performance of the full model.
 
+\subsection{Full Complexity Network}
 % Full Model
 To solve the full problem a more complex model will be used, using variations on the architecture presented by Murad et al discussed in \ref{sec:related_works}. The effect of hyper-parameters on it's performance will be evaluated by para-metrically sweeping those appropriate. This will allow ideas and observations established from the simplified model to be tested to see if the knowledge is transferable to more complex examples.
 
