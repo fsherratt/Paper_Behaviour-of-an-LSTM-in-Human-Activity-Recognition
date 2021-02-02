@@ -70,7 +70,7 @@
 
 %=================================================================
 % Full title of the paper (Capitalized)
-\Title{Understanding LSTM Network Behaviour for IMU-based Human Activity Recognition in Prosthesis and Wearables}
+\Title{Understanding LSTM Network Behaviour of IMU-based Locomotion Mode Recognition for Applications in Prosthesis and Wearables}
 
 % Author Orchid ID: enter ID or remove command
 \newcommand{\orcidauthorA}{0000-0003-3611-4846} % Add \orcidA{} behind the author's name
@@ -103,11 +103,13 @@
 % Abstract (Do not insert blank lines, i.e. \\) 
 % \abstract{A single paragraph of about 200 words maximum. For research articles, abstracts should give a pertinent overview of the work. We strongly encourage authors to use the following style of structured abstracts, but without headings: (1) Background: Place the question addressed in a broad context and highlight the purpose of the study; (2) Methods: Describe briefly the main methods or treatments applied; (3) Results: Summarize the article's main findings; and (4) Conclusion: Indicate the main conclusions or interpretations. The abstract should be an objective representation of the article, it must not contain results which are not presented and substantiated in the main text and should not exaggerate the main conclusions.}
 
-\abstract{To adapt lower limb prosthesis for different locomotion modes, they require systems for recognising user intent. As medical devices, these systems require both high accuracy and a detailed understanding of their internal operation. A dataset of six human locomotion activities (walking, stopped, stairs and ramps) from twenty-two subjects is collected, capturing steady-state and transitions between activities in dynamic natural environments. The data set is then used to analyse how a reduced complexity Long Short Term Memory (LSTM) network learns to recognise human activities. The analysis identifies that the model primarily classifies activity type based on input data around early stance. The effects of hyper-parameters on the classification accuracy on a full complexity Human Activity Recognition (HAR) model are evaluated for both seen and unseen subjects. The results reveal that over-fitting to individuals' gait traits prevents generalisation to new unseen users. Further investigation reveals that gait variations between users primarily occur in early stance. For a full complexity model trained to an individual, errors mostly occur around the transition between activities. To compensate for these errors, the addition of a transition state is investigated. No significant performance improvement occurs, suggesting that the transition region is highly variable.}
+\abstract{\textcolor{red}{Human Locomotion Mode Recognition (LMR) has the potential to be used as a control mechanism for lower limb active prosthesis. Active prosthesis can assist and restore a more natural gait for amputees, but as a medical device they must minimise user risks, such as falls and trips. As such, any control system must have high accuracy and robustness, with a detailed understanding of its internal operation. Long Short Term Memory (LSTM) machine learning networks can perform LMR with high accuracy levels. However, the internal behaviour during classification is unknown, and they struggle to generalise when presented with novel users. The target problem addressed in this paper is understanding the LSTM classification behaviour for LMR.} A dataset of six locomotive activities (walking, stopped, stairs and ramps) from twenty-two non-amputee subjects is collected, capturing both steady-state and transitions between activities in natural environments. \textcolor{red}{Non-amputees are used as a substitute for amputees to provide a larger dataset.} The dataset is used to analyse the internal behaviour of a reduced complexity LSTM network. \textcolor{red}{This analysis identifies that the model primarily classifies activity type based on data around early stance.} Evaluation of generalisation for unseen subjects reveals low sensitivity to hyper-parameters and over-fitting to individuals' gait traits. \textcolor{red}{Investigating the differences between individual subjects showed that gait variations between users primarily occur in early stance, potentially explaining the poor generalisation. Adjustment of hyper-parameters alone could not solve this, demonstrating the need for individual personalisation of models. The main achievements of the paper are (i) the better understanding of LSTM for LMR, (ii) demonstration of its low sensitivity to learning hyper-parameters when evaluating novel user generalisation, (iii) demonstration of the need for personalisation of ML models to achieve acceptable accuracy.}}
+
+
 
 % Keywords
 % \keyword{keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific to the article, yet reasonably common within the subject discipline.)}
-\keyword{Human Activity Recognition; IMU; LSTM; Wearables; Prosthetic}
+\keyword{Locomotion Mode Recognition; LMR; HAR; IMU; LSTM; Wearables; Prosthetic}
 
 % The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
 %\PACS{J0101}
@@ -142,46 +144,48 @@
 
 \section{Introduction}
 % Generic introduction to prosthesis and the problems users face
-For the non-amputee\footnote{In the field this is commonly referred to as able-bodied. This can be considered an outdated term, so instead non-amputee will be used in this article}, it is taken for granted that during locomotion, both legs will act in unison adapting to the environment and activity without thought; for lower limb amputees this ability is lost. Amputees suffer from poor gait due to muscle imbalances, and significant compensatory mechanism are required to adapt to the loss of muscle and joints\cite{Silverman2008}. This results in musculoskeletal problems, increased energetic cost of locomotion and an increased risk of falling\cite{Herr2012, Piazza2017, McDonald2018}. The next generation of prosthesis aims to replicate the lost power generating functionality of muscles in an attempt to improve gait. In order for the prosthetic to work in synergy with the user, it must recognise the users intent; therefore, a system of Human Activity Recognition (HAR) is required.
+For the non-amputee\footnote{In the research field this is commonly referred to as able-bodied. This can be considered an outdated term, so instead, non-amputee will be used in this article}, it is taken for granted that during locomotion, both legs will act in unison adapting to the environment and activity without thought; for lower limb amputees this ability is lost. Amputees suffer from poor gait due to muscle imbalances, and significant compensatory mechanisms are required to adapt to the loss of muscle and joints\cite{Silverman2008}. This results in musculoskeletal problems, increased energetic cost of locomotion and an increased risk of falling\cite{Herr2012, Piazza2017, McDonald2018}. The next generation of prosthesis aims to replicate the lost power generating functionality of muscles in an attempt to improve gait. In order for the prosthetic to work in synergy with the user, it must recognise the users intent; therefore, a system of Locomotion Mode Recognition (LMR) is required.
 
 % What existing solutions are there.
-There are commercially available prostheses that actively adapt to the users intent, such as Ottobock's Enpower BiOM\cite{Enpower}, Blatchford's ElanIC\cite{ElanIC} and \ "Ossur's Proprio Foot\cite{Proprio}. None of these three provides more than basic functions such as maintaining dorsiflexion during leg swing to increase toe clearance and adjusting ankle resistance based on terrain. Only the BiOM ankle offers powered assist in push-off which relies on a hand-tuned heuristics control strategies\cite{Montgomery2018}.
+Several commercially available prostheses exist that actively adapt to the users intent, such as Ottobock's Enpower BiOM\cite{Enpower}, Blatchford's ElanIC\cite{ElanIC} and \"Ossur's Proprio Foot\cite{Proprio}. None of these three provides more than basic functions, such as maintaining dorsiflexion during leg swing to increase toe clearance and adjusting ankle resistance based on terrain. Only the BiOM ankle offers powered assist in push-off, the controller for this relies on hand-tuned heuristics control strategies\cite{Montgomery2018}.
 
 % Problems\Research gaps
-Machine Learning (ML) offers the ability to significantly increase the sophistication of such systems, through understanding of a wide range of activities and personalisation to individual characteristics without specialist intervention\cite{Labarriere2020}. Sequential ML networks are a good fit for this problem, but little is know of their underlying behaviour. For a medical device such as a prosthetic, both a detailed knowledge of internal network operation and high levels of accuracy are required. 
+Machine Learning (ML) offers the ability to significantly increase the sophistication of such systems, through understanding of a wide range of activities and personalisation to individual characteristics, without specialist intervention\cite{Labarriere2020}. \textcolor{red}{As classifying activities is temporal is nature, } sequential ML networks, such as Long Short Term Memory (LSTM), are a good fit. \textcolor{red}{LSTM networks have been demonstrated to be extremely capable at Human Activity Recognition (HAR), accurately identifying actions from locomotive actions, such as Walking, Running and Stairs\cite{Murad2017}, to Hip-Hop dance moves\cite{Samprita2020}. However, little is know of their understanding internal behaviour during these tasks.} For a medical device, such as a prosthetic, both a high levels of accuracy and detailed knowledge of internal network operation is required.
 
 % How we are going about answering the research gap/question
-This paper explores in detail the operation and performance of Long Short Term Memory (LSTM) networks for HAR using both seen and novel users. Data from non-amputee participants is used as a substitute for amputee data as it allows for a much larger and varied data set while minimising risk to subjects. This is then used to investigate the internal operation on a simplified LSTM network. The effect of hyper-parameters on the generalisation performance of a full complexity LSTM network is then investigated. Finally, changes to the model are investigated to try and improve its performance for novel users. 
-
-The major contributions of this work are as follows:
+This paper explores in detail the operation and performance of LSTM networks for LMR using both seen and novel users. Data from non-amputee participants is used as a substitute for amputee data as it allows for a much larger and more varied data set while minimising risk to subjects. This is then used to investigate the internal operation on a simplified LSTM network. The effects of hyper-parameters on the generalisation performance of a practical LSTM network is then investigated. Finally, changes to the model are investigated to try and improve its performance for novel users. 
 
 % What are the major contributions of this paper
+The major contributions of this work are as follows:
 \begin{enumerate}
-\item Methodology for and collection of large self-supervised wearable Inertial Measurement Units (IMU) data set of human activity data in a natural environment.
-\item Provide an insight into the behaviour of an LSTM HAR model, and the effects of hyper-parameters on its performance
-\item Demonstration of the need for personalisation techniques to account for individual gait traits
-\item Investigation of additional transition state to reduce uncertainty around the transition between locomotion modes.
+\item Methodology for the collection of a large self-supervised data set of human locomotion data in a natural environment.
+\item Provide an insight into the behaviour of an LSTM LMR model, and the performance effects of hyper-parameter selection.
+\item Investigation of hyper-parameter sensitivities in an LSTM network and their effect on classification accuracy and generalisation to novel user.
+\item Demonstration of the need for personalisation techniques to account for individual gait traits.
 \end{enumerate}
 
-The remainder of this paper is organized as follows; Section \ref{sec:human_gait_cycle} presents theory on the human gait cycle, and it's relevance to HAR. In section \ref{sec:lstm_therory} ML in HAR, the theory of LSTMs, and related literature is presented. Section \ref{sec:data_collection} presents the methodology for data collection. Section \ref{sec:simplified_model} includes the methodology and results of analysis for the internal operation of a simplified LSTM HAR network. Section \ref{sec:full_complexity} contains the results of analysis of hyper-parameter sensitivities of a full complexity HAR LSTM network. Section \ref{sec:improving_perfromance} explores issues identified in the full complexity model and potential solutions. Finally Sections \ref{sec:discussion} and \ref{sec:conclusion} contain discussion and conclusions.
-
+The remainder of this paper is organized as follows; \textcolor{red}{First background theory on the Human Gait Cycle and LSTMs is presented in Section \ref{sec:theory}. Section \ref{sec:related_work} contains Related work followed by Section \ref{sec:materials_and_methdology} - Materials and Methodology, describing the data collection process and setup of the ML environment. The following Sections, \ref{sec:simplified_model} and \ref{sec:full_complexity}, detail the experiments undertaken, investigating LSTM behaviour, and hyper-parameter sensitivities respectively. These each follow the same structure with an introduction to the experiment, analysis methodology, then results and discussions. The remaining two sections, \ref{sec:discussion} and \ref{sec:conclusion}, contain discussion and conclusions.}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section talks about the human gait cycle and how it varies between different activities and why different locomotion modes are required.
-\section{HAR in the Human Gait Cycle}
-\label{sec:human_gait_cycle}
+\section{Human Gait and Machine Learning Fundamentals}
+\label{sec:theory}
+\textcolor{red}{Within this section fundamental theory of the human gait cycle, and Recurrent Neural Networks (RNN) and LSTMs is presented.}
+
+\subsection{Locomotion Mode Recognition and the Human Gait Cycle}
+
 Human gait is a cyclic process that can be delineated by key events. A gait cycle is defined by two successive Initial Contact (IC) events (the point at which the foot contacts the ground) of the same limb. As this is normally the heel, it is often referred to as Heel Strike (HS). Conversely, the point when the foot leaves the ground is referred to as Toe Off (TO). These two events are used to subdivide the gait into two phases; stance - when the foot is on the ground, and swing when not. A diagram showing these events and their location in the gait cycles is shown in Figure \ref{fig:gait_cycle}.
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=\textwidth]{Figures/Gait_Cycle.jpg}
-    \caption{Human Gait Cycle during level walking, adapted from \cite{humanGaitCycle2016}}
+    \caption{Human Gait Cycle during level walking, adapted from \cite{humanGaitCycle2016}. \textcolor{red}{The percentage timings of the gait events are approximate, they vary depending on the individual and environment.}}
     \label{fig:gait_cycle}
 \end{figure}
 
-It has been shown that gait events can be established from only extreme of the shank angular velocity in the sagittal plane\footnote{The sagittal plane divides the body into left and right, so rotation in this plane is forward and backward motion of the shank}  using a technique originally presented by Sabatini et al\cite{Sabatini2005}. IC/HS was found to line up with the minima following peak swing velocity and TO was identified as the halfway point between the zero-crossing and the minima before peak swing. Figure \ref{fig:y-gyro-hs-to} shows the gyroscope trace of a sensor attached to a subject's shank with the locations of the calculated TO and IC events indicated.
+It has been shown that gait events can be established from only extrema of the shank angular velocity in the sagittal plane\footnote{The sagittal plane divides the body into left and right, so rotation in this plane is forward and backward motion of the shank} using a technique originally presented by Sabatini et al.\cite{Sabatini2005}. IC/HS was found to line up with the minima following the peak swing velocity \textcolor{red}{(PK)} and TO was identified as the halfway point between the zero-crossing, \textcolor{red}{negative to positive}, and the minima before peak swing. Figure \ref{fig:y-gyro-hs-to} shows the gyroscope trace of a sensor attached to a subject's shank with the locations of the calculated TO and IC events indicated.
 
 \begin{figure}[!htb]
     \centering
@@ -190,30 +194,30 @@ It has been shown that gait events can be established from only extreme of the s
     \label{fig:y-gyro-hs-to}
 \end{figure}
 
-% How does HAR relate to the human gait?
-The action of the leg varies depending on the activity. To accommodate this, powered prostheses will require multiple locomotive modes to achieve different timings and power requirements. Therefore automated recognition of the user's intentions and subsequent selection of the corresponding locomotive mode will be crucial to the performance of device\cite{Tucker2015, Windrich2016, Zhang2015}. In order for amputees to have confidence in the device, its activity recognition must be timely, accurate and consistent and able to account for the individual gait characteristics.\cite{Pedroli2019, Sinha2011, Ponce2016}
+% How does LMR relate to the human gait?
+The action of the leg varies depending on the activity. To accommodate this, powered prostheses will require multiple locomotive modes to achieve the different timing and power requirements. Therefore automated recognition of the user's intentions and subsequent selection of the corresponding locomotive mode will be crucial to the performance of devices\cite{Tucker2015, Windrich2016, Zhang2015}. In order for amputees to have confidence in a prosthetic device, its activity recognition must be timely, accurate and consistent and able to account for the individual gait characteristics.\cite{Pedroli2019, Sinha2011, Ponce2016}
 
-For the current generation of prosthetic devices, this is achieved through hand-tuned heuristics. These methods identify and associate changing properties in sensor data with different activities. For example, Coley et al. noted that the variation in shank sagittal plane rotational velocity that occurs from stairs\cite{Coley2005}. It was found that during early stance there is an increase in rotational velocity during stair descent and a decrease during stair ascent when compared to level walking. The current state of the art in HAR uses ML methods to accomplish activity recognition; these techniques will be discussed further in the next section.
+For the current generation of prosthetic devices, this is achieved through hand-tuned heuristics. These methods identify and associate changing properties of sensor data with different activities. For example, Coley et al. noted the variation in shank sagittal plane rotational velocity that occur when walking on stairs\cite{Coley2005}. It was found that during early stance there is an increase in rotational velocity during stair descent and a decrease during stair ascent when compared to level walking. The current state of the art in LMR uses ML methods to accomplish activity recognition; these techniques will be discussed further in the next section.
 
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Introduce ML in HAR and benefits over heuristics; RNN and LSTM theory; what have other people done in the area
-\section{LSTM Networks for HAR} 
+% Introduce ML in LMR and benefits over heuristics; RNN and LSTM theory; what have other people done in the area
+\subsection{Long Short Term Memory Networks}
 \label{sec:lstm_therory}
-HAR for active prostheses has conventionally been achieved through heuristic methods with handpicked features and manually-tuned for each individual \cite{Maqbool2017, Xu2018}. This approach is favoured by the commercial market due to safety and regulatory concerns\cite{Fluit2020}.  The tuning of these controllers is time-consuming and requires a highly skilled prosthetist. In the current state of the art for HAR techniques, the focus has been on the use of Machine Learning (ML) techniques to automate the process of feature selection, output classification, and personalisation\cite{Labarriere2020}.
+LMR for active prostheses has conventionally been achieved through heuristic methods with handpicked features that are manually-tuned for each individual \cite{Maqbool2017, Xu2018}. This approach is favoured by the commercial market due to safety and regulatory concerns\cite{Fluit2020}.  The tuning of these controllers is time-consuming and requires a highly skilled prosthetist. In the current state of the art for LMR techniques, the focus has been on the use of ML techniques to automate the process of feature selection, output classification, and personalisation\cite{Labarriere2020}.
 
-Many different machine learning techniques have been investigated including, Support Vector Machines, Hidden Markov Models and Convolution Neural Networks with success\cite{Labarriere2020}. As sensor data from human gait is temporal, the best architecture for solving this will be one that can take into account the sequential nature of the input data. The Recurrent Neural Network (RNN) is an ML architecture suited to handling sequential data containing both vertical and horizontal connections. This means that cell activation is related to both the previous time step and the input. Information is therefore passed along the sequence as well as up through layers. Figure \ref{fig:rnn_structure} shows the unfolded structure of a recurrent network. It can be seen that the activation of each cell is dependent on both it's inputs and the hidden states of the previous time steps.
+Many different machine learning techniques have been investigated including, Support Vector Machines, Hidden Markov Models and Convolution Neural Networks (CNN) with success\cite{Labarriere2020}. As sensor data from human gait is temporal, the best architecture for solving this will be one that can take into account the sequential nature of the input data. The Recurrent Neural Network (RNN) is an ML architecture suited to handling sequential data as it contains both vertical and horizontal connections. This means that cell activation is related to both the previous time step and the input. Information is therefore passed along the sequence as well as up through layers. Figure \ref{fig:rnn_structure} shows the unfolded structure of a recurrent network. It can be seen that the activation of each cell is dependent on both it's inputs and the hidden states of the previous time steps.
 
 \begin{figure}[!hbt]
     \centering
-    \includegraphics[width=0.6\textwidth]{Figures/lstm/rnn_structure.png}
-    \caption{Unfolded Recurrent Network \cite{Graves2012}}
+    \includegraphics[width=0.7\textwidth]{Figures/lstm/rnn_structure.jpg}
+    \caption{Unfolded Recurrent Network, adapted from\cite{Graves2012}}
     \label{fig:rnn_structure}
 \end{figure}
 
-Each timestep in the network can contain a number of hidden states or units. This is better represented by Equation \ref{eqn:rnn_activation} showing the activation input, $a^t$. $\mathbf{a}$ is formed from the bias vector $\mathbf{b}$ plus the sum of input vectors $\mathbf{x}$ and previous hidden states $\mathbf{h}$, multiplied by the weight matrices $\mathbf{W}$ and $\mathbf{U}$ for hidden-to-hidden state and input-to-hidden state connections respectively.\cite{Goodfellow2015} The shape of an RNN network is often described by its timesteps x units, for example, 128x6.
+Each timestep in the network can contain a number of hidden states or units. This is represented by Equation \ref{eqn:rnn_activation} showing the activation input, $\mathbf{a}^t$. $\mathbf{a}$ is formed from the bias vector $\mathbf{b}$ plus the sum of input vectors $\mathbf{x}$ and previous hidden states $\mathbf{h}$, multiplied by the weight matrices $\mathbf{W}$ and $\mathbf{U}$ for hidden-to-hidden state and input-to-hidden state connections respectively.\cite{Goodfellow2015} The shape of an RNN network is often described by its timesteps and units, for example, 128x6.
 
 \begin{equation}
     \mathbf{a}^{(t)} = \mathbf{b} + \mathbf{Wh}^{(t-1)} + \mathbf{Ux}^{(t)}
@@ -221,10 +225,10 @@ Each timestep in the network can contain a number of hidden states or units. Thi
 \end{equation}
 
 %What problems exist with them 
-RNNs have been shown to produce good results in some sequential tasks, but their application is limited by the difficulty in training. The primary difficulty is the vanishing/exploding gradient problem. During gradient-based training methods, repeated multiplication by values that are not near one along long dependency chains results in values that either vanish or explode. A vanishing gradient makes it challenging to know which direction the parameters should move to improve the cost function. Exploding gradients can make learning unstable. Non-gradient based training have been tried, although to limited success. \cite{Graves2012, Goodfellow2015}
+RNNs have been shown to produce good results in some sequential tasks, but their application is limited by difficulty of training. The primary difficulty is the vanishing/exploding gradient problem. During gradient-based training methods, repeated multiplication by values that are not near one, along long dependency chains results in values that either vanish or explode. A vanishing gradient makes it challenging to know which direction the parameters should move to improve the cost function. Exploding gradients can make learning unstable. Non-gradient based training have been tried, although to limited success. \cite{Graves2012, Goodfellow2015}
 
 % LSTM
-The Long Short Term Memory (LSTM) architecture solved the vanishing gradient problem by adding mechanisms for regulating information allowing it to be retained for long periods. Created by Hochreiter and Schmidhuber in 1997\cite{Hochreiter1997} the LSTM is an RNN style architecture that includes gates to control information flow between cells, see Figure \ref{fig:lstm_unit}. Information flowing along the cell state can be modulated by the input and forget gate structures with the final output of a filtered version of the cell state based on context from the inputs.\cite{Olah2015}
+The Long Short Term Memory (LSTM) architecture solves the vanishing gradient problem by adding mechanisms for regulating information allowing it to be retained for long periods. Created by Hochreiter and Schmidhuber in 1997\cite{Hochreiter1997} the LSTM is an RNN style architecture that includes gates to control information flow between cells, see Figure \ref{fig:lstm_unit}. Information flowing along the cell state can be modulated by the input and forget gate structures with the final output a filtered version of the cell state based on context from the inputs.\cite{Olah2015}
 
 \begin{figure}[!htb]
     \centering
@@ -234,52 +238,51 @@ The Long Short Term Memory (LSTM) architecture solved the vanishing gradient pro
 \end{figure}
 
 % Lit Review
-\subsection{Related Work}
+\section{Related Works}
+\label{sec:related_work}
 In HAR tasks, LSTMs have been demonstrated to provide exceptional performance\cite{Murad2017} although very little work has been done investigating this in the context of a prosthesis. Labarri\`ere et al. conducted a systematic review of the ML methods used in activity recognition; for assistive device LSTM networks were only used once\cite{Labarriere2020}.
 
-% Highly performing LSTM networks in HAR - Controlled conditions
-Murad and Pyun investigated Deep LSTM networks for HAR\cite{Murad2017}. They trained their network on common Activities of Daily Living (ADL) datasets presenting performance in comparison to other ML architectures on the same data sets. The network they used took raw IMU data as its input, then interpreted the data using four LSTM layers before a late fusion dense layer and a softmax classifier were used to produce a class output. The number of units in the LSTM layers was not explicitly stated but appeared to be one. Figure \ref{fig:murad_lst_network_structure} shows the architecture used by Murad and Pyun. 
+% Highly performing LSTM networks in LMR - Controlled conditions
+LSTM networks have been found to perform highly in HAR and Activities of Daily Living (ADL) tasks. Murad and Pyun investigated Deep LSTM networks for LMR\cite{Murad2017}. They trained their network on common ADL datasets, presenting performance in comparison to other ML architectures on the same data sets. The network they used took raw IMU data as its input, then interpreted the data using four LSTM layers before a late fusion dense layer and a softmax classifier were used to produce a class output. The number of units in the LSTM layers was not explicitly stated but appeared to be one. Performance is high achieving 96.7\% accuracy on the UCI-HAD dataset\cite{Anguita2013} and an improvement on the presented previous classification attempts using CNN, SVM and other networks. \textcolor{red}{Tufek et al. replicated this result, achieving 93\% accuracy on the UCI-HAD data set using only a three layer LSTM network. \cite{Tufek2020}} 
 
-\begin{figure}[!htb]
-    \centering
-    \includegraphics[width=0.4\textwidth]{Figures/lstm/murad_lstm_architecture.jpg}
-    \caption{Murad et al raw IMU LSTM Network Structure\cite{Murad2017}}
-    \label{fig:murad_lst_network_structure}
-\end{figure}
+However, the accuracy presented is determined from the validation data, a random 20\% of the source data, so sufficient separation between training and validation data is not guaranteed. In the compared work, a mixture of evaluation techniques is used, most commonly k-fold cross-validation techniques. With test data selected by leaving out participants \cite{Koller2018, Sprager2015}. As such, it is not clear that a direct comparison can be made to demonstrate LSTM's superiority.
 
-% Not clearly specified numbers of units but appears to be a single unit network
-Performance is high achieving between 92 \& 97\% accuracy and an improvement on the presented previous classification attempts using CNN, SVM and other networks. However, the accuracy presented is determined from the validation data, a random 20\% of the source data, so sufficient separation between training and validation data is not guaranteed. In the compared work, a mixture of evaluation techniques is used, most commonly k-fold cross-validation techniques. With test data selected by leaving out participants \cite{Koller2018, Sprager2015}. As such, it is not clear that a direct comparison can be made to demonstrate LSTM's superiority.
+% Sensor fusion
+\textcolor{red}{Different sensor fusion approaches have been tried. Murad et al allowed a deep LSTM network to learn to fuse the sensor modalities\cite{Murad2017}. Chung et al. used a ensemble voting arrangement, where each channel modality of sensor data was passed though a separate LSTM network, with a weighted voting system forming the output classification\cite{Chung2019}. This achieved a slightly higher accuracy, of 94\%, than using the sensors individually.}
+
+\textcolor{red}{Multiple authors have developed models that use a series of CNN layer first to fuse sensor data from multiple modalities before passing it to a LSTM network\cite{Abbaspour2020, Ihianle2020, Mutegeki2020, Wang2020, Mekruksavanich2020}. These achieve only minor improvements in performance classification with 95-96\% accuracies. Again none of the authors were clear about the unit shape of their LSTM networks.}
 
 % LSTM network for assistive devices
-Wang et al. used a Deep LSTM network to select locomotion modes for a lower extremity exo-skeleton\cite{Wang2018}. Five locomotion modes were classified: sitting down, standing up, level-ground walking, ascending stairs, and descending stair based on angular information from hip, knee and ankle joints. A two-layer LSTM network with 128 timestep windows was used. The hidden states of this were fed into a weighted mean before a softmax classifier. Again the number of units per timestep was not specified. The classifier performed better than the other models tested.
+There are few examples of LSTM networks being used in assistive devices. Wang et al. used a Deep LSTM network to select locomotion modes for a lower extremity exo-skeleton\cite{Wang2018}. Five locomotion modes were classified (sitting, standing, walking and ascending/descending stairs) based on angular information from hip, knee and ankle joints. A two-layer LSTM network with 128 timestep windows was used. The hidden states of this were fed into a weighted mean before a softmax classifier. Again the number of units per timestep was not specified. The classifier performed better than the other models tested achieving over 95\%.
 
 % Use of non-amputee subjects as a substitute for amputees
-Ben-Yue Su et al. presents work investigating intent prediction for trans-tibial amputees using IMU data and CNN networks\cite{Su2019}. Ten non-amputee and one trans-tibial amputee were asked to perform short walks traversing a short staircase and ramp with a level surface either side. The non-amputee subjects wore a hands-free crutch to simulate amputation. Three IMUs were attached to the thigh, shank and ankle of the "healthy" leg. The CNN classifier identified five steady states and eight transitions between states. An accuracy of 94\% was achieved by the non-amputee subjects; this dropped to 89.23\% for the amputee for validation data. When testing generalisation to an unseen user, using leave one user out cross-validation, this dropped to 82\% for non-amputee subjects. Subject-specific training was recommended. Reasons for poor generalisation were not investigated.
+Ben-Yue Su et al. presented work investigating intent prediction for trans-tibial amputees using IMU data and a CNN networks\cite{Su2019}. Ten non-amputee and one trans-tibial amputee were asked to perform short walks traversing a short staircase and ramp with a level surface either side. The non-amputee subjects wore a hands-free crutch to simulate amputation. Three IMUs were attached to the thigh, shank and ankle of the "healthy" leg. The CNN classifier identified five steady states and eight transitions between states. An accuracy of 94\% was achieved by the non-amputee subjects; this dropped to 89\% for the amputee for validation data. When testing generalisation to an unseen user, using Leave One Out Cross Validation (LOOXV), this dropped to 82\% for non-amputee subjects. Subject-specific training was recommended. Reasons for poor generalisation were not investigated.
 
 % Novel user performance
-Dehghani et al. investigate the metrics used to evaluate the performance of classifiers, particularly in regard to their performance on unseen data presented using k-fold cross-validation methods\cite{Dehghani2019}. The paper implements various forms of ML, such as Support Vector Machines (SVM) and Hidden Markov Model (HMM) but not LSTM. Dehghani found that using validation data to evaluate performance overestimates accuracy by 10-16\% as the validation data is too similar to the training data. Instead, individual subjects should be excluded and used as test subjects. The reason for the worse generalisation when presented with a novel user has not been investigated.
+Research into the generalisation of ML HAR Models to new users is limited. Dehghani et al. investigate the metrics used to evaluate the performance of classifiers, particularly in regard to their performance on unseen data presented using k-fold cross-validation methods\cite{Dehghani2019}. The paper implements various forms of ML, such as Support Vector Machines (SVM) and Hidden Markov Models (HMM) but not LSTM. Dehghani found that using validation data to evaluate performance overestimates accuracy by 10-16\% as the validation data is too similar to the training data. Instead, individual subjects should be excluded and used as test subjects. The reason for the worse generalisation when presented with a novel user has not been investigated.
 
-Few people have investigated LSTM networks for HAR and those who have, have only presented headline figures. All the works identified use the same kind of architecture, with all the final LSTM hidden state values fed into the classifier. Dehghani et al. identified that model generalisation to novel users is an area that needs further investigation\cite{Dehghani2019}.
+\textcolor{red}{Investigations into LSTM networks for HAR/LMR have been primarily focused on achieving the highest possible classification accuracy. No one has investigated the internal operation of the network, or sensitivities to hyper-parameter selection for these applications. Dehghani et al. identified that model generalisation to novel users is an area that also needs further investigation\cite{Dehghani2019}. This paper aims to address these areas.}
 
+% Materials and Methodology
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Data Collection in a Dynamic Natural Environment}
+\section{Materials and Methodology}
+\label{sec:materials_and_methdology}
+\textcolor{red}{In order to complete the aims of this paper, a data-set of human locomotion, methods for processing this data and a ML environment are required. This section details the methodology used to provide this. It is split into three sections, Sections \ref{sec:data_collection} and \ref{sec:pre-processing} detail the data collection and pre-processing respectively. Section \ref{sec:machine_Learning} presents the ML environment and methods.}
+
+\subsection{Unsupervised Data Collection in Dynamic Natural Environments}
 \label{sec:data_collection}
-There are several commonly used data sets for HAR of non-amputees. The OPPORTUNITY activity recognition dataset\cite{roggan2010} contains 18 activity classes for Activities of Daily Living (ADL) such as opening/closing doors and drinking from a cup. Each subject wore seven 6-axis IMUs and 12 3-axis accelerometers while they performed the prescribed actions. The UCI-HAD dataset\cite{Anguita2013} recorded subjects performing six activities; walking, stair ascent, stair descent, sitting, standing and lying while wearing a waist-mounted smartphone with onboard Magnetic, Angular Rate and Gravity (MARG) sensors. Both of these data sets were recorded in controlled conditions, so do not capture any variation in the activity that may occur due to the environment. Sztyler and Stuckenschmidt collected data from 15 subjects performing eight activities while wearing six wearable sensors. Recording took place in the same natural environments for each activity; however, only steady-state activities were captured and not the transition between them\cite{Sztyler2017}.
+There are several commonly used data sets for LMR of non-amputees. The OPPORTUNITY activity recognition dataset\cite{roggan2010} contains 18  classes for Activities of Daily Living (ADL) such as opening/closing doors and drinking from a cup. Each subject wore seven 6-axis IMUs and 12 3-axis accelerometers while they performed the prescribed actions. The UCI-HAD dataset\cite{Anguita2013} recorded subjects performing six activities; walking, stair ascent, stair descent, sitting, standing and lying while wearing a waist-mounted smartphone with onboard Magnetic, Angular Rate and Gravity (MARG) sensors. Both of these data sets were recorded in controlled conditions, so do not capture any variation in the activity that may occur due to the environment. Sztyler and Stuckenschmidt collected data from 15 subjects performing eight activities while wearing six wearable sensors. Recording took place in the same natural environments for each activity. Only steady-state activities were captured and not the transition between them\cite{Sztyler2017}. Due to limitation in the identified data sets, a new set of data is required. 
 
 % Aim of data collection
-Due to limitation in the identified data sets, a new set of data is required. The aim of this data set was to record natural locomotion in an unstructured environment, capturing both steady-state and also the transition between activities across different settings from a wide range of subjects. Collection of large quantities of data from amputees is very challenging, so instead non-amputee subjects are used. Non-amputee subjects have a less varied gait than amputees, but this can be countered by a larger population size.
-
-Study subjects were provided with instructions on how to use the sensing equipment and then allowed to record as they wished. The following activities were selected, Walking (W), Stair Ascent (SA), Stair Descent (SD), Ramp Ascent (RA), Ramp Descent (RD) and Stopped (S). Labarri\`ere et al. identified these as the most commonly investigated and required no equipment or skill to perform\cite{Labarriere2020}. The study received ethical approval from the University of Bath Research Ethics Approval Committee for Health (REACH), reference \textit{EP 19/20 003}.
-
-% Add pictures of different activities
+The aim of the new data set was to record natural locomotion in an unstructured environment, capturing both steady-state and the transition between activities across different settings from a wide range of subjects. Collection of large quantities of data from amputees is very challenging, so instead non-amputee subjects are used. Non-amputee subjects have a less varied gait than amputees, but this can be countered by a larger population size.
 
 % Sensor selection and location
-Non-invasive wearable sensors, such as Inertial Measurement Units (IMU), are an appealing choice for developing such a system. IMUs give fast update rates, 100s of Hz, are non-invasive (small with minimal mounting constraints), low cost and reasonable accuracy. They have been widely used in the field, all of the latest generation of powered prosthetic knees investigated by Fluit et al contained IMUs\cite{Fluit2020}.
+Non-invasive wearable sensors, such as Inertial Measurement Units (IMU), are an appealing choice for developing such a system. IMUs give fast update rates, 100s of Hz, are non-invasive (small with minimal mounting constraints), low cost and have reasonable accuracy. They have been widely used in the field, all of the latest generation of powered prosthetic knees investigated by Fluit et al contained IMUs\cite{Fluit2020}.
 
 % Which sensors did we use and why
-The Suunto Movesense wearable IMU was used to collect activity data. The device contains a nine-axis MARG sensor and a Bluetooth Low Energy (BLE) radio in a small 10g package. The sensor housing contains a snap connector allowing it to be clipped on attachment hardware and a variety of mounting hardware is available off the shelf. The sensor is user-programmable allowing customised behaviour; in this case, it was set up to stream IMU data at 100Hz over a BLE connection to a custom app running on an android smartphone. Further details of the app are presented in Section \ref{sec:app}.
+The Suunto Movesense wearable IMU was used to collect activity data. This is a COTS device containing a nine-axis MARG sensor and a Bluetooth Low Energy (BLE) radio in a small 10g package. The sensor housing contains a snap connector allowing it to be clipped on attachment hardware. A variety of mounting hardware is available off the shelf. The sensor is user-programmable allowing customised behaviour \textcolor{red}{through the Movesense API. To enable the desired streaming application it was programmed to transmit compressed} IMU data at 100Hz over its BLE connection to a custom app running on an android smartphone. \textcolor{red}{The devices come with Factory calibration for the IMU, no additional IMU calibration was undertaken.}
 
-Five sensors were attached to each participant in the following locations; on the inside of ankle using an elastic Velcro strap, on each hip using a clothes/belt clip and across the chest using a heart rate strap. The location of the sensors was selected to give wide coverage of body movements while providing easy, secure and non-invasive attachment to minimise discomfort and disruption to natural movement. Figure \ref{fig:movesense_sensors} shows a subject wearing the five sensors.
+Five sensors were attached to each participant in the following locations; on the inside of both ankles using an elastic Velcro strap, on each hip using a clothes/belt clip and across the chest using a heart rate strap. The location of the sensors was selected to give wide coverage of body movements while providing easy, secure and non-invasive attachment to minimise discomfort and disruption to natural movement. Figure \ref{fig:movesense_sensors} shows a subject wearing the five sensors.
 
 \begin{figure}[!hbt]
     \centering
@@ -289,8 +292,20 @@ Five sensors were attached to each participant in the following locations; on th
     \label{fig:movesense_sensors}
 \end{figure}
 
+To record data from the sensors, a custom android app was created. This formed a BLE connection to each device and saved the streamed data. During recording a series of buttons at the bottom of the screen could be used for real-time labelling of activities. Once recording had finished the subject was presented with an upload screen allowing metadata to be added. The file could then be shared anonymously with the researchers using Google's Firebase cloud services. A screenshot of the app in recording mode is shown in Figure \ref{fig:data_collection_diagrams}.
+
+\begin{figure}[!hbt]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/movesense/sensor_collection.jpg}
+    \caption{Custom Android app with connected sensors and illustration of Firebase upload system}
+    \label{subfig:data_collection}
+    \label{fig:data_collection_diagrams}
+\end{figure}
+
+Study subjects were provided with instructions on how to use the sensing equipment, and the activity classes, then allowed to record as they wished. The following activities were selected, Walking (W), Stair Ascent (SA), Stair Descent (SD), Ramp Ascent (RA), Ramp Descent (RD) and Stopped (S). Labarri\`ere et al. identified these as the most commonly investigated and they require no equipment or skill to perform\cite{Labarriere2020}. The study received ethical approval from the University of Bath Research Ethics Approval Committee for Health (REACH), reference \textit{EP 19/20 003}.
+
 % Participant instructions
-Twenty-two Participants of a wide variety of age, gender and physique were chosen to give a broad data set. Participants were instructed to walk around a varied environment with the sensor on while labelling their activities. No further instructions on how the activities should be conducted were provided. A total of 268 minutes of data was collected, which includes 1170 transitions between activities. Table \ref{tab:data_collected_summary} contains a summary of the data collected.
+Twenty-two Participants of a wide variety of age \textcolor{red}{(mean 29, std 10), gender (17M, 5F)}, and physique were chosen to give a broad data set. Participants were instructed to walk around a varied environment with the sensor on while labelling the six activity classes. No further instructions on how the recording should be conducted were provided. A total of 268 minutes of data was collected, which includes 1170 transitions between activities. Table \ref{tab:data_collected_summary} contains a summary of the data collected. \textcolor{red}{The number of steps was produced by summing the peak swing gait events for each label.}
 
 % Dataset Statistics
 \begin{table}[!hbt]
@@ -311,25 +326,10 @@ Twenty-two Participants of a wide variety of age, gender and physique were chose
     \end{tabular}
 \end{table}
 
-
-
-
-% Android app
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Custom App and Data Pre-Processing}
-\label{sec:app}
-To record data from the sensors, a custom android app was created. This formed a BLE connection to each device and saved the streamed data. During recording a series of buttons at the bottom of the screen could be used for real-time labelling of activities. Once recording had finished the subject was presented with an upload screen allowing metadata to be added. The file could then be shared anonymously with the researchers using Google's Firebase cloud services. A screenshot of the app in recording mode is shown in Figure \ref{fig:data_collection_diagrams}.
-
-\begin{figure}[!hbt]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/movesense/sensor_collection.jpg}
-    \caption{Custom Android app with connected sensors and illustration of Firebase upload system}
-    \label{subfig:data_collection}
-    \label{fig:data_collection_diagrams}
-\end{figure}
-
-% Data post-processing
-To convert the raw saved data to a form that Tensorflow could import a processing pipeline was developed in Matlab 2019b. The pipeline consisted of decoding, re-sampling, time alignment, normalisation, and exporting. The raw data is saved as transmitted by the sensors so needed to be converted from compressed fixed-point to a floating-point representation. The data was then re-sampled, to compensate for the difference between the internal sensor clocks, using the smartphone clock as a common reference. The data is normalised so that for each recording, every individual sensor channel had a standard deviation of one and a mean of zero. Finally the data is exported to a \textit{.csv} file. A flow diagram of this process is shown in Figure \ref{fig:data_processing}.
+\subsection{Data Pre-Processing}
+\label{sec:pre-processing}
+To convert the raw saved data to a form that Tensorflow could import, a processing pipeline was developed in Matlab 2019b. The pipeline consisted of a decoding, re-sampling, time alignment, normalisation, and exporting steps. A flow diagram of this process is shown in Figure \ref{fig:data_processing}, \textcolor{red}{further details of the process are described below}.
 
 \begin{figure}[!hbt]
     \centering
@@ -338,17 +338,56 @@ To convert the raw saved data to a form that Tensorflow could import a processin
     \label{fig:data_processing}
 \end{figure}
 
+\textcolor{red}{The smartphone app does not interpret the compressed data stream, only saving it to a log file. Therefore the data files need} to be converted from a compressed fixed-point form back to there original floating-point representations. \textcolor{red}{This is done by applying the reverse scaling factor to that used by the Movesense device to compress the data. The scaling factor was chosen to provide a balance between accuracy and compression.}
+
+\textcolor{red}{To compensate for the difference between the internal sensor clocks the data is re-sampled using the smartphone clock as a common reference. Once a consistent frequency for all the sensor data is achieved, this common reference allows for data from all sensors to be aligned accurately.}
+
+\textcolor{red}{Finally the data is normalised using Equation \ref{eqn:z_score} to scale and shift the data. After this each data channel has a center of zero and standard deviation of one. Normalisation is applied on an individual data file basis. In Equation \ref{eqn:z_score} $\mu$ is the sample channel mean and $\mu$ the sample channel standard deviation. $x$ is the input sample and $z$ the normalised value. The normalisation process removes any overall bias in the IMU data. No additional filtering was applied to the raw data before it was fed to the machine learning models.}
+
+\begin{equation}
+    \text{z} = \frac{x-\mu}{\sigma}
+    \label{eqn:z_score}
+\end{equation}
+
 % Data axis system
-The following axis system will be used when presenting and analysing the results. The axes use a right-hand system with direction, front left and up for $x$, $y$ and $z$ respectively. $x$ is forward towards the front of the body, $y$ toward the left and $z$ upwards. From this point on, the beginning of the gait cycle, 0\%, will be defined as the peak swing maxima. This leads HS by about 20\%.
+The following axis system will be used when presenting and analysing the results. The axes use a right-hand system with direction, front left and up for $x$, $y$ and $z$ respectively. $x$ is forward towards the front of the body, $y$ toward the left and $z$ upwards. From this point on, the beginning of the gait cycle, 0\%, will be defined as the peak swing maxima. This leads HS by about 20\%. 
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Machine Learning Training}
+\subsection{Machine Learning Methods}
 \label{sec:machine_Learning}
-Within this section, the methodology for training the machine learning models is presented. The continuous sensor data was segmented using sliding windows. Between the start of each window, an offset of two samples was used. This offset was set empirically to give the model a wide range of data windows position without slowing down learning from an unnecessarily large training set. The output label for each widow was set as the recorded ground truth at the end of the window. Classification labels were presented using one-hot encoding.
+Within this subsection, the methodology for setup and training of the machine learning models are presented. \textcolor{red}{TensorFlow 2.1 was used, with the Keras API used to setup, train and evaluate the different ML Models. The ML environment was developed and run in an Anaconda Python 3 environment. A conventional supervised training setup was used.} 
 
-The data set is divided into two groups for test and training. The training set is used during the learning process with the test set reserved for evaluating the performance of unseen data. The test set is a variation of Leave One Out Cross Validation (LOOXV). LOOXV involves training and analysing the model multiple times with different excluded individuals, the results are then combining to improve statistical certainty. For this paper four/five subjects were excluded each time with analysis repeated five time so each subject was excluded once. The training set contains the remaining subjects, with 30\% of the data used as a validation set. Figure \ref{fig:test_training_split} provides an illustration of how the data is divided between the three classes.
+\subsubsection{Model Setup}
+\label{subsubsec:model_setup}
+% Describe the LSTM network structure for the two different models trained
+\textcolor{red}{Two different model architectures were developed, a simplified model with a single information path for investigating LSTM internal behaviour; and a full complexity practical model based on the architecture presented by Murad et al.\cite{Murad2017} for investigating hyper-parameter sensitivities. This design was previously discussed in Section \ref{sec:lstm_therory}.}
+
+\textcolor{red}{For both architectures input data is fed directly into the first LSTM layer. For models with additional LSTM layer, the full output of the first LSTM layer is fed into input of the next layer and so on. The output from the final LSTM layer is fed into a fully connected dense layer followed by a ReLU classifier. For the simplified model the LSTM output is the last timestep only, for the full complexity model the full output of all timesteps is used. The size of the dense layer is equal to the number of outputs from the last LSTM layer. A one-hot classification output is used to encode the activity classes. Figure show \ref{subfig:simplfied_lstm_model} and \ref{subfig:full_lstm_model} show the architectures of the simplified and full complexity model respectively.}
+
+\begin{figure}[!hbt]
+    \centering
+        \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/lstm/Simplified_Network.jpg}
+        \caption{Simplified model}
+        \label{subfig:simplfied_lstm_model}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/lstm/LSTM_Network.jpg}
+        \caption{Full Complexity Practical Model}
+        \label{subfig:full_lstm_model}
+    \end{subfigure}
+    \caption{Machine Learning Model Architectures}
+    \label{fig:ml_models}
+\end{figure}
+
+%Data Segmentation
+\subsubsection{Data Segmentation}
+The data set was divided into two groups for test and training. The training set was used during the learning process with the test set reserved for evaluating the performance of unseen data. The test set was a variation of Leave One Out Cross Validation (LOOXV). LOOXV involves training and analysing the model multiple times with different excluded individuals, the results are then combined to improve statistical certainty. For this paper four/five subjects were excluded each time with analysis repeated five time, meaning each subject was excluded once. The training set contains the remaining subjects, with 30\% of the data used as a validation set. Figure \ref{fig:test_training_split} provides an illustration of how the data is divided between the three data sets.
 
 \begin{figure}[!hbt]
     \centering
@@ -357,307 +396,45 @@ The data set is divided into two groups for test and training. The training set 
     \label{fig:test_training_split}
 \end{figure}
 
-To balance the data set, both the training and test sets were adjusted by removing data so that no class contains more than 50\% more samples than any another. This re-balancing was undertaken carefully so that during validation splitting the balance was maintained. A class weight input was used to bias the training to further balance the class labels.
+To balance the data set, both the training and test sets were adjusted by removing data so that no class contained more than 50\% more samples than any another. This re-balancing was undertaken carefully so that during validation splitting the balance was maintained. A class weight input was used to bias the training to further balance the class labels.
 
-The models were trained to minimise categorical cross-entropy, model weights were initialised with a Golorot Uniform initialiser\cite{Glorot2010} and optimised with an ADAM optimiser\cite{Kingma2015}.  Mini batch sizes of 2000 were used, with early stopping based on validation data cross-entropy loss stagnation. Between the output of the LSTM network and dense classifier, a dropout of 0.5 was used, this was selected experimentally.
+The continuous sensor data was segmented using sliding windows. Between the start of each window, an offset of five samples was used. This offset was set empirically to give the model a wide range of data windows position without slowing down learning from an unnecessarily large training set. The output label for each window was set as the recorded ground truth at the end of the window. Classification labels were presented using one-hot encoding.
 
+\subsubsection{Model training}
+The models were trained to minimise categorical cross-entropy. Model weights were initialised with a Golorot Uniform initialiser\cite{Glorot2010} and optimised with an ADAM optimiser\cite{Kingma2015}. A dropout of 0.5 was used, selected experimentally, with network connections dropped between the last LSTM output and the dense classifier.
+
+\textcolor{red}{During trained the full training dataset was used for each epoch, with data passed to the optimiser in mini batches of 2000 windows. At the end of each epoch the entire validation set was evaluated. Early stopping was used to prevent over fitting, this stopped training when stagnation of validation cross-entropy loss was observed. Stagnation was identified by three consecutive losses of greater than the minimum previously seen.}
+
+\textcolor{red}{The model was trained on a PC with a AMD Ryzen 3600 CPU and a Nvidia Geforce RTX 2060. Using GPU training, each epoch took approximately 10 seconds with between 30 and 100 epochs required to train each model depending on the model size and the number of output classes.}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simplified model
-\section{Simplified LSTM}
+\section{Investigation of LSTM Behaviour}
 \label{sec:simplified_model}
-%Introductory paragraph - Needs an intro explaining we are going to start simple, to show what are the characteristics of LSTM and move the the more complex networks
-Understanding of the LSTM behaviour can be gained from matching changes in internal hidden state to input data. This analysis can only be performed on a small and low-complexity networks, as large networks would be extremely challenging to visualise. A simplified network is defined with a single path for information flow.
+\textcolor{red}{}
+\textcolor{red}{An understanding of the internal operation of an LSTM LMR network is important in assessing the network limitations. To capture the internal behaviour the effects of input data on the output must be established. This will be achieved by mapping changes in internal hidden state to incoming data.}
 
-The simplified network analysis a single shank IMU sensor is used as through visual inspection this showed the most variation between activities and subjects.
+\textcolor{red}{This analysis can only be performed on low-complexity networks, as information paths of large networks become too convoluted making tracing infeasible. The experiments will use the simplified model, described in Section \ref{subsubsec:model_setup}, as this only has one path for information to flow along.} For the simplified network analysis only a single shank IMU sensor will be used. From visual inspection this showed the most variation between activities and subjects.
 
-\subsection{Methodology}
-% Simplified model - plotting of hidden state
-Figure \ref{fig:simplfied_lstm_model} shows the simplified model that will be used for the behavioural analysis of the LSTM. A single unit wide network is used with the final hidden state value passed to a dense classification layer with a ReLU activation. As desired, the simplified model provides only one path for information to flow. Logits were used to ensure no scaling occurs along the network. 
+\subsection{Analysis Methodology}
+\textcolor{red}{To enable changes in the hidden state to be mapped to features of the input data, typical plots of input sensor data for different activities are required. This will also allow differences between individual's gait to be assessed. A typical gait cycle was produced by combining multiple gait cycles for different activities. Each gait cycle can then be normalised to percentage gait, with the mean and standard deviation of multiple cycles plotted to produce activity trends.}
 
-To extract the hidden state the weights and biases of the trained LSTM layer were extracted and copied into a new model with output of the full hidden state sequence. Input data was then fed into the new network to extract the hidden state.
+% hidden state
+\textcolor{red}{Using an extraction of the hidden state, a measure of information gained from the input data will be drawn.} Due to reduced learning capacity of the model, in order to get a meaningful classification accuracy, the classification is performed on a reduced number of classes. The data labels are reduced to include only the three most prevalent activities ( Walking, Stair Ascent and Stair Descent). The total output classes can be reduced further by combining pairs of these. 
 
-\begin{figure}[!htb]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/lstm/Simplified_Network.jpg}
-    \caption{Illustration of simplified model}
-    \label{fig:simplfied_lstm_model}
-\end{figure}
+Four different combinations of output class for the three activities were tested with four different combinations of input sensor, $y$ Gyroscope, $x$ Accelerometer, $y$ Gyroscope \& $x$ Accelerometer, and a full six-axis IMU. The $y$ gyroscope and $x$ accelerometer were selected as visually they showed the greatest variation between activities.
 
-% How are we simplifying the classification problem so the basic model can solve it
-In order to get a meaningful classification accuracy using the simplified model, the classification is performed on a reduced number of classes. The data set is reduced to include only the three most prevalent activities (W, SA, SD). Pairs of these will be combined to reduce the total output classes to two as well as testing with all three as separate output classes.
+To extract the hidden state the weights and biases of the trained LSTM layer were extracted and copied into a new model whose output was the full hidden state sequence. Input data was then fed into the new network to extract the hidden state. To observe patterns in the hidden state, multiple data windows were overlaid. Variations in step cadence were removed by normalising to gait cycle. Different activities were then plotted independently to show how the network acts to each. \textcolor{red}{The hidden state output is shown on the $y$ axis. This is a dimensionless value which tends toward a value depending on the network classification decision. The value is dependent on the classifier weights but is typically -1, 0 or 1.  The final element of the hidden state is fed into the dense layer which forms a classification based on it's learnt thresholds.}
 
-% Analysis methods
-To observe patterns in the hidden state, multiple data windows were plotted overlaid on each other. The windows all have the same starting point in the gait cycle. To achieve this, variations in step cadence must be accounted for by normalising in time and plotting as a percentage of the gait cycle. Each different activity was then plotted independently to show how the network acts to different input activities.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Results and analysis
 \subsection{Results and Analysis}
+\textcolor{red}{Below the results of the experiments investigating the internal behaviour of a LMR LSTM network are presented and analysed.}
 
-Below the results of the simplified LSTM model are presented. Four different combinations of output class for the activities Walking, Stair Ascent and Stair Descent, with four different combinations of input sensor, $y$ Gyroscope, $x$ Accelerometer, $y$ Gyro \& $x$ Accel and a full six-axis IMU. The $y$ gyroscope and $x$ accelerometer were selected as they showed the greatest variation between activities.
-
-Table \ref{tab:simplified_model_perfomances} presents the classification accuracies of each input and class combination. For each model, classification accuracy was recorded for the validation data and a set of unseen test data from excluded participants. It can be seen that all the models performed equally well for both validation and test data sets. Given the simplicity of the models, this suggests that an LSTM can separate activities from only the prominent features for both seen and unseen users, but only to around 80\% accuracy.
-
-The models struggled to separate stair descent from the other two activities and, apart from with the six-axis IMU, most accurately classified stair ascent. All models performed worst when attempting the hardest task of classifying all three activities individually. An input of the $x$ accelerometer on its own performed most accurately, even compared to models with multiple input sensors channels. When using only the $y$ gyroscope, it wasn't possible to separate the three activities individually.
-
-\begin{table}[!hbt]
-    \centering
-    \caption{Summary of simplified model performance}
-    \label{tab:simplified_model_perfomances}
-    \begin{tabular}{cccc}
-        \textbf{Model Classes} & \textbf{Sensor} & \textbf{Validation Accuracy} & \textbf{Test Accuracy}\\
-        \hline
-        W, SA+SD & $y$ Gyroscope & 71.6\% & 86.0\% \\
-        SA, W+SD & $y$ Gyroscope & 82.7\% & 83.7\% \\
-        SD, W+SA & $y$ Gyroscope & 57.9\% & 65.6\% \\
-        W, SA, SD & $y$ Gyroscope & * & * \\
-        W, SA+SD & $x$ Accelerometer & 86.6\% & 89.2\% \\
-        SA, W+SD & $x$ Accelerometer & 88.6\% & 87.1\% \\
-        SD, W+SA & $x$ Accelerometer & 78.4\% & 81.9\% \\
-        W, SA, SD & $x$ Accelerometer & 71.9\% & 72.4\%\\
-        W, SA+SD & $x$ Accel \& $y$ Gyro & 59.3\% & 48.8\% \\
-        SA, W+SD & $x$ Accel \& $y$ Gyro & 71.2\% & 67.1\% \\
-        SD, W+SA & $x$ Accel \& $y$ Gyro & 75.1\% & 80.8\% \\
-        W, SA, SD & $x$ Accel \& $y$ Gyro & 58.6\% & 66.2\%\\
-        W, SA+SD & 6 axis IMU & 82.0\% & 83.3\% \\
-        SA, W+SD & 6 axis IMU & 74.2\% & 71.8\% \\
-        SD, W+SA & 6 axis IMU & 55.3\% & 63.3\% \\
-        W, SA, SD & 6 axis IMU & 48.0\% & 50.7\%\\
-        \multicolumn{4}{l}{\footnotesize{* Unable to train a model that could classify this set of classes}}
-    \end{tabular}
-\end{table}
-
-% \subsection{Hidden State}
-Figures \ref{fig:hidden-state-gyro-y-w_v_sa-sd} and \ref{fig:hidden-state-accel-x-w_v_sa-sd} show the trends in hidden state for the simplified model at different percentage points through the gait cycle. Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd} has an input of the $y$ axis gyroscope and Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd} the $x$ axis accelerometer. In Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd} the model is classifying stair ascent from a combined class of stair descent and walking. For Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd} the model is classifying walking from stairs (ascent and descent). Each of the activities is plotted in a different colour, solid black for walking, dashed red for stair ascent and dot-dash blue for stair descent. The five subplots show the windows starting at different percentage offset from peak swing. The $x$-axis has units of percentage gait cycle, the $y$ axis is the dimensionless output of the hidden state. The final element of the hidden state is fed into the dense layer which forms a classification based on a learnt threshold. The hidden state should therefore tend to one of two values for a two class problem.
-
-\begin{figure}[!hbt]
-     \centering
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/0_Participant_04.jpg}
-         \caption{0\%}
-         \label{subfig:gyro_y_w_v_sa_sd_0}
-     \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/20_Participant_04.jpg}
-         \caption{20\%}
-         \label{subfig:gyro_y_w_v_sa_sd_20}
-     \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/40_Participant_04.jpg}
-         \caption{40\%}
-         \label{subfig:gyro_y_w_v_sa_sd_40}
-     \end{subfigure}
-     \vskip\baselineskip
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/60_Participant_04.jpg}
-         \caption{60\%}
-         \label{subfig:gyro_y_w_v_sa_sd_60}
-     \end{subfigure}
-     \hspace{0.5em}
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/80_Participant_04.jpg}
-         \caption{80\%}
-         \label{subfig:gyro_y_w_v_sa_sd_80}
-     \end{subfigure}
-    \caption{Hidden state of single unit LSTM model with $x$ axis accelerometer as it's input. The model output classifies stair ascent from walking and stair descent. walking (solid black), stair ascent (dashed red) and stair descent (dot dash blue)}
-    \label{fig:hidden-state-gyro-y-w_v_sa-sd}
-\end{figure}
-
-\begin{figure}[!hbt]
-     \centering
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/0_Participant_04.jpg}
-         \caption{0\%}
-         \label{subfig:a}
-     \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/20_Participant_04.jpg}
-         \caption{20\%}
-         \label{subfig:b}
-     \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/40_Participant_04.jpg}
-         \caption{40\%}
-         \label{subfig:c}
-     \end{subfigure}
-     \vskip\baselineskip
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/60_Participant_04.jpg}
-         \caption{60\%}
-         \label{subfig:d}
-     \end{subfigure}
-     \hspace{0.5em}
-     \begin{subfigure}[b]{0.32\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/80_Participant_04.jpg}
-         \caption{80\%}
-         \label{subfig:e}
-     \end{subfigure}
-    \caption{Hidden state of single unit LSTM model with $x$ axis accelerometer as it's input. The model output classifies walking from stairs (ascent and stair descent). walking (solid black), stair ascent (dashed red) and stair descent (dot dash blue)}
-    \label{fig:hidden-state-accel-x-w_v_sa-sd}
-\end{figure}
-
-For both acceleration and gyroscope, the hidden state value changes most during early stance. For the $y$ gyroscope, Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd}, it can be seen that the classification of stair ascent from walking and stair descent occurs around 50\% gait cycle. For the $x$ accelerometer, Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd}, this is occurs later in the gait cycle, around 70\%. For the $x$ accelerometer hidden state trends are less tightly grouped, likely due to nosier input data. This may be fixed by input smoothing. Classification of stair descent is less certain; the model struggles to separate from the other two classes. Stair ascent and walking are easily classified.
-
-Analysis of the simplified model has demonstrated that even a model of extremely limited learning capacity can achieve reasonable HAR classification accuracy. It has also shown that the classification of activity occurs exclusively within the early stance phase for the three activities examined. This suggests that the model will be highly sensitive in this area. The model also obtained minimal additional information beyond one stance period; therefore, a window of greater than one gait cycle is unnecessary. The learning from this will now be compared to a full complexity model to verify results broader applicability.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Full Complexity Network}
-\label{sec:full_complexity}
-% What's in this section
- Within this section, the effect of hyper-parameters selection on classification accuracy for test and training will be evaluated by parametrically sweeping values.
-
-To solve the full HAR classification problem, a more complex model is needed. This will be a variation on the architecture presented by Murad et al. discussed in \ref{sec:lstm_therory}. The input is fed into a series of LSTM layers. The output for each unit of the final layer is fed into a dense layer of six units wide, one for each output class. A ReLU activation function is used as the output classifier.
-
-For these more complex models, the fully connected links between layers and the hidden state become too convoluted to interpret directly. Instead, model performance will be analysed using percentage classification accuracy. Validation data will be used to evaluate seen data performance, and test data as a metric for it's generalisation to unseen data. Confusion matrices will be used to establish how well the model performs in individual classes.
-
-The following hyper-parameters are investigated:
-\begin{itemize}
-    \item Window size
-    \item LSTM units
-    \item Number of layers
-    \item Number of inputs - by varying the number of axes and number of sensors
-    \item Number of training participants 
-\end{itemize}
-
-%%%%% Results and analysis
-\subsection{Network Size}
-When investigating the network dimensions, three different window lengths (32, 64 and 128 timesteps at 100Hz) and six unit widths (4, 6, 8, 16, 32, 64) were tested. Each model shape was trained five times for the five different train/test data sets. Table \ref{tab:model_size_hyper_param} presents the model accuracy achieved for each models $\pm$ standard deviation (n=5). Table \ref{tab:model_size_hyper_param_train} and \ref{tab:model_size_hyper_param_test} contain the validation and test classification accuracies respectively for 18 configurations.
-
-\begin{table}[!hbt]
-    \centering
-    \caption{Model accuracy for hyper-parameters for layer units and input window size for both seen and novel subjects}
-    \label{tab:model_size_hyper_param}
-    \begin{subtable}{.4\linewidth}
-        \centering
-        \caption{Accuracy for seen validation data}
-        \label{tab:model_size_hyper_param_train}
-        \includegraphics[width=\textwidth]{Figures/results/window_v_units_train.jpg}
-    \end{subtable}
-    \hfil
-    \begin{subtable}{.4\linewidth}
-        \centering
-        \caption{Accuracy for unseen test data}
-        \label{tab:model_size_hyper_param_test}
-        \includegraphics[width=\textwidth]{Figures/results/window_v_units_test.jpg}
-    \end{subtable}
-\end{table}
-
-The validation accuracy increases with increasing model size. The improvement when moving from a 32 timestep widow to 64 is much greater than when increasing to 128. For test accuracy, the results plateau around 80\%, after which the improvements in validation performance likely occur due to overfitting to individual traits of the training participants. This also corresponds with an increase in standard deviation for the test data set. A complete gait cycle takes approximately one second, 100 timesteps, so it is likely that exceeding this would make little difference. The continuing performance is likely due to the larger, more sophisticated dense layer.
-
-Multi-layer networks were also investigated. Networks with two, three and four deep LSTM layers were tested, but this showed no improvement in generalisation and only a small improvement in validation accuracy. The same was observed with multiple sensors; there was no additional improvement in generalisation beyond a 6-axis IMU, only an improvement in seen data accuracy. When the three sensor locations were tested individually the shank IMU performed best.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Number of Training Subject}
-
-To evaluate the effects of adding more training subjects on the performance of the model, models were trained with varying numbers of training subjects. Between one and twenty-one training subjects were tested, with a single subject used as the test set. For each increment in subjects, the model was trained ten times with a different excluded subject.
-
-Figure \ref{fig:subject_num_generalisation} presents the changes in accuracy for varying number of training participants. The red line represents the smoothed unseen test subject classification accuracy average for the ten models trained. The blue line represents the same for the validation data. The solid area represents the standard deviation at each point. Figure \ref{fig:subject_num_generalisation_64x12} and \ref{fig:subject_num_generalisation_128x6} show the results for a 64 timestep 12 unit model and 128 time step 6 unit model respectively.
-
-\begin{figure}[!htb]
-    \centering
-    \begin{subfigure}[b]{0.49\textwidth}
-         \centering
-        \includegraphics[width=\textwidth]{Figures/results/number_participants_64x12.jpg}
-        \caption{64 Timesteps, 12 Units}
-        \label{fig:subject_num_generalisation_64x12}
-    \end{subfigure}
-    \hfil
-    \begin{subfigure}[b]{0.49\textwidth}
-         \centering
-        \includegraphics[width=\textwidth]{Figures/results/number_participants_128x6.jpg}
-        \caption{128 Timesteps, 6 Units}
-        \label{fig:subject_num_generalisation_128x6}
-    \end{subfigure}
-    \caption{Classification accuracy of seen/unseen subjects for training with different numbers of participants for two different models}
-    \label{fig:subject_num_generalisation}
-\end{figure}
-
-Figure \ref{fig:subject_num_generalisation} shows that increasing the number of participants leads to better generalised performance, however the effects on increasing numbers of participants levels off at around 15 participants. This would indicate that for novel subjects to achieve high levels of classification performance, increasing the number of subjects alone may not be enough.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Analysis of Miss-classification}
-
-To analyse miss-classification the confusion matrices are analysed together with time series classification output used to identify regions of particular uncertainty.
-
-Table \ref{tab:128x6_full_model_confusion_matrix} shows the confusion matrices for a 128 timestep, 6 unit single layer LSTM network. Table \ref{tab:full_model_conf_matrix_training_128x6} is for the training validation data and Table \ref{tab:full_model_conf_matrix_test_128x6} the unseen test data. Table \ref{tab:128x32_full_model_confusion_matrix} shows the same for a model with 128 timesteps, 32 units. The 6 unit model had a overall classification accuracy of 87.4\% for validation and 84.7\% for test, the 32 unit model accuracy was 96.1\% and 76.0\%.
-
-\begin{table}[!hbt]
-    \centering
-    \caption{128 timestep, 6 unit confusion matrices}
-    \label{tab:128x6_full_model_confusion_matrix}
-    \begin{subtable}{.45\textwidth}
-        \centering
-        \caption{Validation}
-        \label{tab:full_model_conf_matrix_training_128x6}
-        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x6_NT.jpg}
-    \end{subtable}
-    \hfil
-    \begin{subtable}{.45\textwidth}
-        \centering
-        \caption{Test}
-        \label{tab:full_model_conf_matrix_test_128x6}
-        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x6_NT.jpg}
-    \end{subtable}
-\end{table}
-
-\begin{table}[!hbt]
-    \centering
-    \caption{128 timestep, 32 unit confusion matrices}
-    \label{tab:128x32_full_model_confusion_matrix}
-    \begin{subtable}{.45\textwidth}
-        \centering
-        \caption{Validation}
-        \label{tab:full_model_conf_matrix_training_128x32}
-        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x32_NT.jpg}
-    \end{subtable}
-    \hfil
-    \begin{subtable}{.45\textwidth}
-        \centering
-        \caption{Test}
-        \label{tab:full_model_conf_matrix_test_128x32}
-        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x32_NT.jpg}
-    \end{subtable}
-\end{table}
-
-It can be seen that nearly all miss-classifications are confusions with walking. The test data showed a similar pattern for both models, even though the 32 unit model is over-fitted to the training data. Ramp descent and ascent are both heavily confused with walking. This is likely because of the similarities in gait cycle between the two activities, and the difficulty is accurately labelling this activity due to subject biases. Stairs get slightly confused between each other but again mostly with walking. Stair Descent performs worse than stair ascent. It's not obvious why stop performs poorly, although possibly due to limited data. Some miss-classifications may have occurred due to under labelled or inaccuracies in labelling during recording.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Figure \ref{fig:missclassification} shows a visual representation of the activities labelled during a recording above which is a plot of where the classification errors occurred. This was produced for data of a training participant. As can be seen, a large proportion of miss-classification occur around changes in activity, the transition between activities is highly uncertain.
-
-\begin{figure}[!htb]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/results/location_of_errors.jpg}
-    \caption{Miss-classifications and labelled activity locations, grey - walking, red - stair ascent, blue - stair descent}
-    \label{fig:missclassification}
-\end{figure}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Improving Model Performance}
-\label{sec:improving_perfromance}
-
-%Some kind of introductory paragraph 
-From the previous analysis, it was seen that the model suffers from two problems. Poor generalisation performance when presented with unseen novel subjects, and higher frequency of errors during transitions between activity. This section includes an analysis of the two problems.
-
-\subsection{Individual Gait Trends}
-In order to gauge differences between subjects gait, that might account for poor classification, trends in sensor data for different activities were produced. Sensors data, normalised to gait percentage, were combined to give a mean and standard deviation for different activities. The results of this are presented in Figure \ref{fig:imu_gait_trends}, the solid lines represent the mean and the filled area the standard deviation. The $x$ accelerometer and $y$ gyroscope signals have been plotted, for three different activities W, SA, SD. For each of these three subjects have been super-imposed over each other. 0\% gait cycle corresponds with the peak $y$-axis shank angular velocity.
+\subsubsection{Individual's Gait Trends}
+Figure \ref{fig:imu_gait_trends} show the typical sensor data trends for different individuals and activities. The solid lines represent the mean and the filled area the standard deviation. the $x$ accelerometer and $y$ gyroscope signals, for three different activities W, SA, SD. On each plot three individuals have been super-imposed over each other. 0\% gait cycle corresponds with the peak $y$-axis shank angular velocity.
 
 \begin{figure}[!htb]
      \centering
@@ -702,22 +479,273 @@ In order to gauge differences between subjects gait, that might account for poor
          \caption{Shank angular velocity about $y$ axis during SD}
          \label{subfig:y_gyro_sd}
      \end{subfigure}
-    \caption{Gait trends for $x$ accelerometer and $y$ gyroscope for 3 different activities. The solid lines show the mean and the shaded area the standard deviation for n steps. Black solid - Subject 4, Red dashed - Subject 7, Blue dot dash - Subject 16}
+    \caption{Gait trends for the right shank $x$ accelerometer and $y$ gyroscope for 3 different activities. The solid lines show the mean and the shaded area the standard deviation for n steps. Black solid - Subject 4, Red dashed - Subject 7, Blue dot dash - Subject 16}
     \label{fig:imu_gait_trends}
 \end{figure}
 
-From Figure \ref{fig:imu_gait_trends} the differences between the three chosen participants can be seen. The $x$ acceleration signal is very noisy, with large standard deviation particularly around heel strike, ~20\% gait cycle. Smoothing of the input data could be used to solve this. The gyroscope signals are more consistent, shown by the reduced standard deviation.
+From Figure \ref{fig:imu_gait_trends} the differences between the three chosen participants can be seen. The $x$ acceleration signal is very noisy, with large standard deviation seen particularly around heel strike, ~20\% gait cycle. Smoothing of the input data could be used to reduce this, \textcolor{red}{but this was not investigated}. The gyroscope signals are more consistent, shown by the reduced standard deviation.
 
-The stance angular velocities match the results presented by Coley et al. Stair ascent has a lower early stance rate and stair descent a higher. For stair ascent, there is a delayed peak acceleration with stair descent and walking having very similar shapes. The difference in peak magnitude between activities is a result of variation in step cadence.
+The stance angular velocities match the results presented by Coley et al\cite{Coley2005}. Stair ascent has a lower early stance rate and stair descent a higher. For stair ascent, there is a delayed peak acceleration with stair descent and walking having very similar shapes. The difference in peak magnitude between activities is a result of variation in step cadence.
 
 The variations in sensor value between subjects is less than the variations between activities, with early stance having the greatest variations between participants for both sensors plotted. Walking shows the most consistent results among participants. These trends hold true for the subjects not shown.
 
+\subsubsection{Simplified LSTM Model Behaviour}
+Table \ref{tab:simplified_model_perfomances} presents the classification accuracies of each input and class combination. For each model, classification accuracy was recorded for the validation data and a set of unseen test data from excluded participants. It can be seen that all the models performed equally well for both validation and test data sets. Given the simplicity of the models, this suggests that an LSTM can separate activities from only the prominent features for both seen and unseen users, but only to around 80\% accuracy.
 
-\subsection{Transition State}
-To try and improve performance during transitions between activities, an additional transition state was added to the model. The transition state was added as a seventh classification output. Data labels were augmented with a transition region added for 0.5 seconds before and after changes in activity. The model was then trained again using the excluded participant cross-validation to establish generalisation performance. Different shaped models were evaluated to certify the result.
+\begin{table}[!hbt]
+    \centering
+    \caption{Summary of simplified model performance}
+    \label{tab:simplified_model_perfomances}
+    \begin{tabular}{cccc}
+        \textbf{Model Classes} & \textbf{Sensor} & \textbf{Validation Accuracy} & \textbf{Test Accuracy}\\
+        \hline
+        W, SA+SD & $y$ Gyroscope & 71.6\% & 86.0\% \\
+        SA, W+SD & $y$ Gyroscope & 82.7\% & 83.7\% \\
+        SD, W+SA & $y$ Gyroscope & 57.9\% & 65.6\% \\
+        W, SA, SD & $y$ Gyroscope & * & * \\
+        W, SA+SD & $x$ Accelerometer & 86.6\% & 89.2\% \\
+        SA, W+SD & $x$ Accelerometer & 88.6\% & 87.1\% \\
+        SD, W+SA & $x$ Accelerometer & 78.4\% & 81.9\% \\
+        W, SA, SD & $x$ Accelerometer & 71.9\% & 72.4\%\\
+        W, SA+SD & $x$ Accel \& $y$ Gyro & 59.3\% & 48.8\% \\
+        SA, W+SD & $x$ Accel \& $y$ Gyro & 71.2\% & 67.1\% \\
+        SD, W+SA & $x$ Accel \& $y$ Gyro & 75.1\% & 80.8\% \\
+        W, SA, SD & $x$ Accel \& $y$ Gyro & 58.6\% & 66.2\%\\
+        W, SA+SD & 6 axis IMU & 82.0\% & 83.3\% \\
+        SA, W+SD & 6 axis IMU & 74.2\% & 71.8\% \\
+        SD, W+SA & 6 axis IMU & 55.3\% & 63.3\% \\
+        W, SA, SD & 6 axis IMU & 48.0\% & 50.7\%\\
+        \multicolumn{4}{l}{\footnotesize{* Unable to train a model that could classify this set of classes}}
+    \end{tabular}
+\end{table}
 
+The models struggled to separate stair descent from the other two activities and, apart from with the six-axis IMU, most accurately classified stair ascent. All models performed worst when attempting the hardest task of classifying all three activities individually. An input of the $x$ accelerometer on its own performed most accurately, even compared to models with multiple input sensor channels. When using only the $y$ gyroscope, it wasn't possible to separate the three activities individually.
+
+Figures \ref{fig:hidden-state-gyro-y-w_v_sa-sd} and \ref{fig:hidden-state-accel-x-w_v_sa-sd} show the trends in hidden state for the simplified model at different percentage points through the gait cycle. Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd} has an input of the $y$ axis gyroscope and Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd} the $x$ axis accelerometer. In Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd}, the model is classifying stair ascent from a combined class of stair descent and walking. For Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd}, the model is classifying walking from stairs (ascent and descent). Each of the activities is plotted in a different colour, solid black for walking, dashed red for stair ascent and dot-dash blue for stair descent. The five subplots show the windows starting at different percentage offset from peak swing. The $x$-axis has units of percentage gait cycle, the $y$ axis is the dimensionless output of the hidden state. \textcolor{red}{Values of the $y$ axis tend towards -1, 0 or 1, depending on the dense layer classifier weights. A value close to these represents a more certain classification}.
+
+\begin{figure}[!hbt]
+     \centering
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/0_Participant_04.jpg}
+         \caption{0\%}
+         \label{subfig:gyro_y_w_v_sa_sd_0}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/20_Participant_04.jpg}
+         \caption{20\%}
+         \label{subfig:gyro_y_w_v_sa_sd_20}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/40_Participant_04.jpg}
+         \caption{40\%}
+         \label{subfig:gyro_y_w_v_sa_sd_40}
+     \end{subfigure}
+     \vskip\baselineskip
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/60_Participant_04.jpg}
+         \caption{60\%}
+         \label{subfig:gyro_y_w_v_sa_sd_60}
+     \end{subfigure}
+     \hspace{0.5em}
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/gyro_y_sa_v_w-sd/80_Participant_04.jpg}
+         \caption{80\%}
+         \label{subfig:gyro_y_w_v_sa_sd_80}
+     \end{subfigure}
+    \caption{Hidden state of single unit LSTM model with $x$ axis accelerometer as it's input. The model output classifies stair ascent from walking and stair descent. walking (solid black), stair ascent (dashed red) and stair descent (dot dash blue). \textcolor{red}{The $x$ axis represent the percentage gait cycle, the $y$ axis is the dimensionless hidden state value, this tends to $1$ for stair ascent and $0$ for walking and stair descent.}}
+    \label{fig:hidden-state-gyro-y-w_v_sa-sd}
+\end{figure}
+
+\begin{figure}[!hbt]
+     \centering
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/0_Participant_04.jpg}
+         \caption{0\%}
+         \label{subfig:a}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/20_Participant_04.jpg}
+         \caption{20\%}
+         \label{subfig:b}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/40_Participant_04.jpg}
+         \caption{40\%}
+         \label{subfig:c}
+     \end{subfigure}
+     \vskip\baselineskip
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/60_Participant_04.jpg}
+         \caption{60\%}
+         \label{subfig:d}
+     \end{subfigure}
+     \hspace{0.5em}
+     \begin{subfigure}[b]{0.32\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Figures/results/hidden_state/accel_x_w_v_sa-sd/80_Participant_04.jpg}
+         \caption{80\%}
+         \label{subfig:e}
+     \end{subfigure}
+    \caption{Hidden state of single unit LSTM model with $x$ axis accelerometer as it's input. The model output classifies walking from stairs (ascent and descent). walking (solid black), stair ascent (dashed red) and stair descent (dot dash blue). \textcolor{red}{The $x$ axis represent the percentage gait cycle, the $y$ axis is the dimensionless hidden state value, this tends to $0$ for walking and $-1$ for stair ascent and descent.}}
+    \label{fig:hidden-state-accel-x-w_v_sa-sd}
+\end{figure}
+
+For both acceleration and gyroscope, the hidden state value changes most during early stance. For the $y$ gyroscope, Figure \ref{fig:hidden-state-gyro-y-w_v_sa-sd}, it can be seen that the classification of stair ascent from walking and stair descent occurs around 50\% gait cycle. For the $x$ accelerometer, Figure \ref{fig:hidden-state-accel-x-w_v_sa-sd}, this occurs later in the gait cycle, around 70\%. For the $x$ accelerometer hidden state trends are less tightly grouped, likely due to noiser input data. This may be fixed by input smoothing, \textcolor{red}{further work is required to investigate this}. Classification of stair descent is less certain; the model struggles to separate this from the other two classes. Stair ascent and walking are easily classified.
+
+\textcolor{red}{The simplified model is very good at adapting to variation in gait cadence. This can be seen as despite the steps plotted being normalised to gait cycle, the trends in LSTM hidden state were consistent. This suggests there is little need to adjust the input data to account for variations in cadence.}
+
+Analysis of the simplified model has demonstrated that even a model of extremely limited learning capacity can achieve reasonable LMR classification accuracy. It has also shown that the classification of activity occurs exclusively within the early stance phase for the three activities examined. This suggests that the model will be highly sensitive in this area. The model also obtained minimal additional information beyond one stance period; therefore, a window of greater than one gait cycle is unnecessary. The learning from this will now be compared to a full complexity model to verify the results broader applicability.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Practical LMR LSTM Network Hyper-Parameter Sensitivities}
+\label{sec:full_complexity}
+% What's in this section
+\textcolor{red}{Within this section, the effect of hyper-parameter selection on model performance for a practical LMR LSTM network will be evaluated. The network architecture used is described in Section \ref{subsubsec:model_setup}.}
+
+The following hyper-parameters will be investigated: Window size, LSTM units, Number of layers, Different Sensor inputs, and Number of training subjects
+
+\textcolor{red}{Finally a simple attempt to improve performance around the transition region will be assessed. The transition between activities is highly variable, data label augmentation will be investigated to add a seventh output, transition, to try and identify this area and act as a measure of confidence.}
+
+\subsection{Analysis Methodology}
+For the more complex models, the fully connected links between layers and the hidden state become too convoluted to interpret directly. \textcolor{red}{Instead, classification accuracy will be the primary measure of model performance. This will be given as the percentage of correctly classified windows out of the total input windows.} Validation data will be used to evaluate seen data performance, and used test data as a measure of generalisation to unseen data. 
+
+To investigate the network dimensions, three different window lengths (32, 64 and 128 timesteps at 100Hz), and six unit widths (4, 6, 8, 16, 32, 64) will be tested. For each model shape the model was trained five times for the five different train/test data sets. With performance evaluated by classification accuracy.
+
+To evaluate how the number of training subjects effects the performance of the model, models were trained with varying numbers of individuals. Between one and twenty-one training subjects were tested, with a single subject used as the test set. For each incremental increase in subjects, the model was trained ten times with a different excluded subject.
+
+Miss-classification will be analysed through the use of confusion matrices. \textcolor{red}{A confusion matrix is a tabular representation of the performance of a classifier. Each cell is populated by a count of the ground truth against the classified output. This allows the accuracy of individual classes and confusion between classes to be assessed.}
+
+The time series classification output is also used to identify regions of particular uncertainty. \textcolor{red}{By plotted ground truth and classified labels as color coded regions on a time axis  areas of incorrect classification can be assessed.}
+
+\textcolor{red}{Finally the seventh classification output, transition, will be evaluated. To train the model for this data-labels will be augmented with a transition region added for 0.5 seconds before and after changes in activity. Models of varying hyper-parameters will then be trained with the transition state in and classification accuracy used to evaluate performance.}
+
+%%%%% Results and analysis
+\subsection{Results and Analysis}
+\textcolor{red}{Below the results of the experiments on the practical LMR LSTM network are presented and analysed.}
+
+\subsubsection{Network Size}
+Table \ref{tab:model_size_hyper_param} presents the model accuracies achieved for each models $\pm$ standard deviation (n=5). Table \ref{tab:model_size_hyper_param_train} and \ref{tab:model_size_hyper_param_test} contain the validation and test classification accuracies respectively. \textcolor{red}{The 32x4 model contained 1124 parameters, the 128x6 model 67334 parameters.}
+
+\begin{table}[!hbt]
+    \centering
+    \caption{Model accuracy for hyper-parameters of different LSTM units and input window size for both seen and novel subjects}
+    \label{tab:model_size_hyper_param}
+    \begin{subtable}{.4\linewidth}
+        \centering
+        \caption{Accuracy for seen validation data}
+        \label{tab:model_size_hyper_param_train}
+        \includegraphics[width=\textwidth]{Figures/results/window_v_units_train.jpg}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.4\linewidth}
+        \centering
+        \caption{Accuracy for unseen test data}
+        \label{tab:model_size_hyper_param_test}
+        \includegraphics[width=\textwidth]{Figures/results/window_v_units_test.jpg}
+    \end{subtable}
+\end{table}
+
+The validation accuracy increases with increasing model size. The improvement when moving from a 32 timestep window to 64 is much greater than when increasing to 128. \textcolor{red}{The number of units was the most direct factor in achieving higher validation accuracy.} For test accuracy, the results plateau around 80\%, after which the improvements in validation performance likely occur due to over-fitting to individual traits of the training participants. This also corresponds with an increase in standard deviation for the test data set. A complete gait cycle takes approximately one second, 100 timesteps, so it is likely that exceeding this would make little difference. The continuing performance is likely due to the larger, more sophisticated dense layer.
+
+Multi-layer networks were also investigated. Networks with two, three and four deep LSTM layers were tested, but they showed no improvement in generalisation and only a small improvement in validation accuracy. The same was observed with multiple sensors; there was no additional improvement in generalisation beyond a single 6-axis shank IMU, only an improvement in seen data accuracy. When the three sensor locations were tested individually the shank IMU performed best.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Number of Training Subject}
+Figure \ref{fig:subject_num_generalisation} presents the changes in accuracy for varying numbers of training participants. The red line represents the smoothed unseen test subject classification accuracy average for the ten models trained. The blue line represents the same for the validation data. The solid area represents the standard deviation at each point. Figure \ref{fig:subject_num_generalisation_64x12} and \ref{fig:subject_num_generalisation_128x6} show the results for a 64 timestep 12 unit and 128 time step 6 unit models respectively.
+
+\begin{figure}[!htb]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+        \includegraphics[width=\textwidth]{Figures/results/number_participants_64x12.jpg}
+        \caption{64 Timesteps, 12 Units}
+        \label{fig:subject_num_generalisation_64x12}
+    \end{subfigure}
+    \hfil
+    \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+        \includegraphics[width=\textwidth]{Figures/results/number_participants_128x6.jpg}
+        \caption{128 Timesteps, 6 Units}
+        \label{fig:subject_num_generalisation_128x6}
+    \end{subfigure}
+    \caption{Classification accuracy of seen/unseen subjects for training with different numbers of participants for two different models}
+    \label{fig:subject_num_generalisation}
+\end{figure}
+
+Figure \ref{fig:subject_num_generalisation} shows that increasing the number of participants leads to better generalised performance, however the effects on increasing numbers of participants levels off at around 15 participants. This would indicate that for novel subjects to achieve high levels of classification performance, increasing the number of subjects alone may not be enough.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Analysis of Miss-classification}
+Table \ref{tab:128x6_full_model_confusion_matrix} shows the confusion matrices for a 128 timestep, 6 unit single layer LSTM network. Table \ref{tab:full_model_conf_matrix_training_128x6} is for the training validation data and Table \ref{tab:full_model_conf_matrix_test_128x6} the unseen test data. Table \ref{tab:128x32_full_model_confusion_matrix} shows the same for a model with 128 timesteps and 32 units. The 6 unit model had a overall classification accuracy of 87.4\% for validation and 84.7\% for test, the 32 unit model accuracy was 96.1\% and 76.0\%.
+
+\begin{table}[!hbt]
+    \centering
+    \caption{128 timestep, 6 unit confusion matrices}
+    \label{tab:128x6_full_model_confusion_matrix}
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Validation}
+        \label{tab:full_model_conf_matrix_training_128x6}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x6_NT.jpg}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Test}
+        \label{tab:full_model_conf_matrix_test_128x6}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x6_NT.jpg}
+    \end{subtable}
+\end{table}
+
+\begin{table}[!hbt]
+    \centering
+    \caption{128 timestep, 32 unit confusion matrices}
+    \label{tab:128x32_full_model_confusion_matrix}
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Validation}
+        \label{tab:full_model_conf_matrix_training_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Training_128x32_NT.jpg}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \caption{Test}
+        \label{tab:full_model_conf_matrix_test_128x32}
+        \includegraphics[width=\textwidth]{Figures/results/conf_matricies/Test_128x32_NT.jpg}
+    \end{subtable}
+\end{table}
+
+It can be seen that nearly all miss-classifications are confusions with walking. The test data showed a similar pattern for both models, even though the 32 unit model is over-fitted to the training participants. Ramp descent and ascent are both heavily confused with walking. This is likely because of the similarities in gait cycle between the two activities, and the difficulty is accurately labelling this activity due to subject biases. Stairs get slightly confused between each other but again mostly with walking. Stair Descent performs worse than stair ascent. It's not obvious why stop performs poorly, although possibly due to limited data. Some miss-classifications may have occurred due to under labelling or inaccuracies in labelling during recording.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Figure \ref{fig:missclassification} shows a visual representation of the activities labelled during a recording, above which is a plot of where the classification errors occurred. As can be seen, a large proportion of miss-classification occur around changes in activity. This is likely because the transition between activities is highly variable and uncertain.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/results/location_of_errors.jpg}
+    \caption{Miss-classifications and labelled activity locations, grey - walking, red - stair ascent, blue - stair descent}
+    \label{fig:missclassification}
+\end{figure}
+
+\subsubsection{Transition State}
 % Results
-Tables \ref{tab:128x6_transition_confusion_matrix} and \ref{tab:128x32_transition_confusion_matrix} present the confusion matrices for the transition models trained with 6 and 32 units respectively. The 6 unit model achieved 82.8\% accuracy on validation data and 72.4\% for test data, and the 32 unit model achieved 93.1\% and 69.3\%. If the transition state is excluded from the classification accuracy then when presented with test data the models achieve 75.2\% and 75.0\% accuracy for the 6 and 32 unit models respectively
+Tables \ref{tab:128x6_transition_confusion_matrix} and \ref{tab:128x32_transition_confusion_matrix} present the confusion matrices for the transition models trained with 6 and 32 units respectively. The 6 unit model achieved 82.8\% accuracy on validation data and 72.4\% for test data, and the 32 unit model achieved 93.1\% and 69.3\%. If the transition state is excluded from the classification accuracy then when presented with test data the models achieve 75.2\% and 75.0\% accuracy for the 6 and 32 unit models respectively.
 
 \begin{table}[!hbt]
     \centering
@@ -758,33 +786,45 @@ Tables \ref{tab:128x6_transition_confusion_matrix} and \ref{tab:128x32_transitio
 \end{table}
 
 % Analysis
-The addition of a transition state has not improved classification performance, achieving equal or worse performance than without the transition state, even when excluding the transition state for classification accuracy. This result is unexpected and requires further investigation but a first impression this is due to the transition region being highly uncertain, and so it appears the model cannot map this into a single state. Further work is required to investigate if there are other methods of determining model certainty.
+The addition of a transition state has not improved classification performance, achieving equal or worse performance than without the transition state, even when excluding the transition state for classification accuracy. This result is unexpected and requires further investigation but at first impression this is due to the transition region being highly uncertain, and so it appears the model cannot map this into a single state. Further work is required to investigate if there are other methods of determining model uncertainty.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Discussion}
 \label{sec:discussion}
-% What were we were trying to investigate?
-The study set out to evaluate the operation of LSTMs and the effects of their hyper-parameters on classification performance.
+% Relate your results to the aims of the experiment. Summarise your results
+\textcolor{red}{The study set out to understand the operation of an LSTM LMR network and the effects of its hyper-parameters on classification accuracy and generalisation.}
 
-% Points of interest
-Analysis of the simplified model identified that early stance was a prominent feature in the separation of walking from stair ascent and descent. It was also observed that this was the area of most variations between individuals. These two observations may begin to explain the challenges in achieving greater than 80\% classification accuracy when presenting novel users to the model as it is likely to be extremely sensitive to variation in early stance.  
+% Points of interest - How does this compare to literature?
+Analysis of the simplified model identified that early stance was a prominent feature in the separation of walking from stair ascent and descent, suggesting a high model sensitivity in the early stance region. It was also observed that this was the area of most variation between individuals. Hyper-parameter sets that achieved greater than 80\% accuracy reduced the performance of the classifier on unseen data. This suggests that it was over-fitting to individual subject's gait traits reducing generalisation. The larger standard deviation in the test set also points to this conclusion. Adjustment of hyper-parameters and standard regularisation techniques alone were not sufficient to solve this over-fitting. These two observations may begin to explain the challenges in achieving greater than 80\% classification accuracy when presenting novel users to the model. This expands on the observation by Dehghani et al. \cite{Dehghani2019} by suggesting that instead of a 15\% reduction in performance with unseen subjects, there is a maximum ceiling of performance of around 80\%.
 
-Parameter adjustments to achieve greater than 80\% accuracy reduced the performance of the classifier on unseen data, suggesting that it was over-fitting to training individual's gait traits. The larger standard deviation in the test set also points to this conclusion. Dropout regularisation alone was not sufficient to solve this over-fitting.
-
-Increasing the number of participants in the study did not help. It can be theorised that this would only help if the model was trained on a subject with a similar gait to the novel user. Amputees have much more varied gait, so this approach may not be applicable. There is the potential that a form of data-augmentation may help with but this has not been investigated. A simpler approach is likely a form of individual personalisation.
+\textcolor{red}{When investigating hyper-parameters, the model was able to demonstrate high levels of performance on the created data-set. Classification performance was comparable to literature achieved similar accuracies to the best performing model. It is noted that due to few studies being forthcoming on the exact network units, found to be a very important hyper-parameter, direct comparison with literature is challenging.}
 
 Prediction of class around transition was challenging, and the addition of a class for this region did not help. Investigation of other methods to solve this is required, such as a form of output averaging or methods for gauging uncertainty from the full classifier output.
 
-% Weaknesses and limitations of the study
-To reduce the data limitation imposed by using amputee data, the study used non-amputee subjects. Data from twenty-two subjects was collected; this is larger than the other data sets identified but still a relatively small study. It is also still to be determined how applicable the outcomes of this study are to amputees and prostheses.
+Increasing the number of participants in the study did not improve generalisation beyond around 80\%. It can be theorised that this would only help if the model was trained on a subject with a similar gait to that of the novel user. As amputees have much more varied gait, this approach is unlikely to be practical. There is the potential that a form of data-augmentation may help with this, but this has not been investigated. A more realistic approach is likely a form of individual personalisation.
+
+% What would it take to implement this on a prosthetic?
+\textcolor{red}{Implementing these techniques in a prosthetic device is still a way off. The results show promise, but further studies are required to address the concerns raised. Practical considerations are also needed; the LSTM model created has a small parameter count, but still requires a large number of calculations to be implemented on an embedded system. Suitable fail safes would also be required to ensure no harm came to the user, especially if it had not been trained to their gait.}
+
+% Weaknesses and limitations of the study - Identify problems in experimental technique and suggest improvements (can combine with Stage 3).
+\textcolor{red}{The study was limited to non-amputee data in order to achieve a large enough population. Data from twenty-two subjects was collected; this is a large data set, but still a relatively small study. It is also still to be determined how applicable the outcomes of this study are to amputees.}
+
+\textcolor{red}{The investigation into hyper-parameters was broad, but there are still many more that could have been investigated. Such as the use of IMU sensors from different locations and the filtering of the IMU data.}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
 \label{sec:conclusion}
-In this paper, we have presented a new data set for HAR research of twenty-two non-amputee subjects performing six activities in real-world environments. Using this data, we investigated the internal operation of an LSTM network and identified early stance as the area of key information. We then investigated how model hyper-parameters affected the model performance and identified that generalisation and classification around transitions are key issues in model performance. Further investigation into these areas was then undertaken with individual gait traits, and high variability around transition suggested as potential causes. An addition transition state was added, but this did not improve performance. 
+\textcolor{red}{Within this paper we explored the behaviour of an LSTM network trained to complete LMR tasks. In literature, there is a lack of studies investigating the internal operation of an LMR LSTM networks, their hyper-parameter sensitivities and poor novel user generalisation.}
 
-From this, we suggest that further work in the following areas is required; techniques for personalisation to individuals, investigate more sophisticated output classifiers to deal with uncertainty around activity transitions and testing with amputee data.
+\textcolor{red}{A new dataset for LMR research of twenty-two non-amputee subjects performing six activities in a real-world environment was collected. A comparison of sensor data for the gait of different subjects revealed that most variability occurred in early stance. Using the dataset, the behaviour of the LSTM layer was examined though mapping input data to changes in hidden state. This revealed that the model primarily classified based on data around early stance. This behaviour could only be directly observed on a simplified model, as the full-connected nature of a practical network makes it too convoluted to interpret hidden state.}
 
+\textcolor{red}{A practical LMR LSTM network was trained for a wide variety of hyper-parameter values to determine it's sensitivities. Classification accuracy, of both validation and novel users test data, was used to determine the generalisation performance. This revealed that, although the network can potentially achieve > 95\% accuracy, it is over-fitting to individuals gait traits. This is likely due to the models sensitivities in the most individually variable phase of the gait cycle. There is also an increase in erroneous classification around the transition between activities. None of the hyper-parameters tested were able to account for these issues.}
+
+\textcolor{red}{The paper shows that network size, number of individuals training data, and number and location of sensors make insignificant contribution to network generalisation performance, demonstrating that personalisation is critical.}
+
+\textcolor{red}{The outcomes of this work suggested that, in order to achieve acceptable accuracy rates (above 95\%) for novel users, a form of model personalisation is required. Additionally, measures to mitigate the errors around transitions are required. Finally, testing with amputee data is required to determine the applicability of the results to prosthesis.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \vspace{6pt} 
@@ -792,7 +832,7 @@ From this, we suggest that further work in the following areas is required; tech
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % \authorcontributions{For research articles with several authors, a short paragraph specifying their individual contributions must be provided. The following statements should be used ``conceptualization, X.X. and Y.Y.; methodology, X.X.; software, X.X.; validation, X.X., Y.Y. and Z.Z.; formal analysis, X.X.; investigation, X.X.; resources, X.X.; data curation, X.X.; writing--original draft preparation, X.X.; writing--review and editing, X.X.; visualization, X.X.; supervision, X.X.; project administration, X.X.; funding acquisition, Y.Y.'', please turn to the  \href{http://img.mdpi.org/data/contributor-role-instruction.pdf}{CRediT taxonomy} for the term explanation. Authorship must be limited to those who have contributed substantially to the work reported.}
-\authorcontributions{Freddie Sherratt and Pejman Iravani were responsible for the conceptualization of the research. Freddie Sherratt developed the methodology, software and performed the  data curation, investigation, and formal analysis, writing the original draft. Andrew Plummer and Pejman Iravani  supervised the project and reviewed the paper.}
+\authorcontributions{Freddie Sherratt and Pejman Iravani were responsible for the conceptualization of the research. Freddie Sherratt developed the methodology, software, performed the data curation, investigation, formal analysis and wrote the original draft. Andrew Plummer and Pejman Iravani supervised the project and reviewed the paper.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \funding{This research was funded by EPSRC through a studentship administered by the University of Bath; reference EP/N509589/1 - 1943783}
@@ -812,11 +852,13 @@ From this, we suggest that further work in the following areas is required; tech
 \begin{tabular}{@{}ll}
 ADL & Activities of Daily Living\\
 BLE & Bluetooth Low Energy \\
+COTS & Commercial Off The Shelf \\
 HS & Heel Strike \\
 HAR & Human Activity Recognition \\
 HMM & Hidden Markov Model \\
 IC & Initial Contact \\
 IMU & Inertial Measurement Unit \\
+LMR & Locomotion Mode Recognition \\
 MARG & Magnetic Angular and Rate Gyroscope \\
 ML & Machine Learning \\
 LOOXV & Leave One Out Cross Validation \\
